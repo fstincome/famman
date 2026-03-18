@@ -188,6 +188,53 @@ export type Database = {
           },
         ]
       }
+      budget_envelopes: {
+        Row: {
+          allocated_amount: number
+          category: string
+          company_id: string
+          created_at: string
+          currency: string
+          id: string
+          percentage: number
+          spent_amount: number
+          subcategory: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_amount?: number
+          category: string
+          company_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          percentage?: number
+          spent_amount?: number
+          subcategory: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_amount?: number
+          category?: string
+          company_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          percentage?: number
+          spent_amount?: number
+          subcategory?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_envelopes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           company_id: string
@@ -775,6 +822,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "expense_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_records: {
+        Row: {
+          amount: number
+          category: string
+          company_id: string
+          created_at: string
+          currency: string
+          date: string
+          description: string | null
+          id: string
+          subcategory: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          company_id: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string | null
+          id?: string
+          subcategory: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          company_id?: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string | null
+          id?: string
+          subcategory?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_records_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -1458,6 +1552,50 @@ export type Database = {
           rate_to_base?: number
         }
         Relationships: []
+      }
+      income_records: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          currency: string
+          date: string
+          description: string | null
+          id: string
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string | null
+          id?: string
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string | null
+          id?: string
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "income_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {

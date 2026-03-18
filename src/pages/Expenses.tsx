@@ -1,440 +1,371 @@
 import { useState } from "react";
-import { MetricCard } from "@/components/MetricCard";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DonutChart } from "@/components/DonutChart";
-import { TrendingDown, CreditCard, Users, Zap, Building, Car, AlertTriangle } from "@/components/icons";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  useFinancialMetrics,
-  useExpenseCategories,
-  useExpenseTrends,
-  useVendors,
-  formatCurrency,
-  formatPercentage,
-} from "@/hooks/useFinancialData";
-import { FilterHeader, FilterState } from "@/components/FilterHeader";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend } from "recharts";
-import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
-import { useExpenseDrillDown } from "@/hooks/useExpenseDrillDown";
-import { ExpenseDrillDownTable } from "@/components/ExpenseDrillDownTable";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, TrendingDown, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useExpenseRecords } from "@/hooks/useExpenseRecords";
+import { useBudgetEnvelopes } from "@/hooks/useBudgetEnvelopes";
+import { BUDGET_CATEGORIES, getCategoryForSubcategory } from "@/lib/budgetConfig";
 
-// Note: Expense trend data is now fetched and aggregated from the backend with dynamic granularity
+export default function Expenses() {
+  const queryClient = useQueryClient();
+  const { data: expenseRecords, isLoading: expensesLoading } = useExpenseRecords();
+  const { envelopes, isLoading: envelopesLoading, getAvailableAmount, invalidate: invalidateEnvelopes } = useBudgetEnvelopes();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-const Expenses = () => {
-  const [filters, setFilters] = useState<FilterState>({
-    dateRange: {},
-    currency: "USD",
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [formData, setFormData] = useState({
+    amount: "",
+    description: "",
+    date: new Date().toISOString().split("T")[0],
   });
-  const [vendorPage, setVendorPage] = useState(1);
-  const vendorsPerPage = 5;
-  const { data: metrics, isLoading: metricsLoading } = useFinancialMetrics(filters.dateRange);
-  const { data: expenseCategories, isLoading: expensesLoading } = useExpenseCategories(filters.dateRange);
-  const { data: expenseTrendData, isLoading: trendsLoading } = useExpenseTrends(filters.dateRange);
-  const { data: vendors, isLoading: vendorsLoading } = useVendors(filters.dateRange);
-  const { convertAmount, currencySymbol } = useCurrencyConversion(filters.currency);
-  const {
-    drillDownData,
-    isLoading: drillDownLoading,
-    openCategoryDrillDown,
-    openPeriodDrillDown,
-    clearDrillDown,
-  } = useExpenseDrillDown(filters.dateRange);
 
-  const formatWithCurrency = (amount: number, date?: string) => {
-    const converted = convertAmount(amount, 'USD', date);
-    return `${currencySymbol}${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const totalSpent = expenseRecords?.reduce((sum, r) => sum + r.amount, 0) || 0;
+  const totalAllocated = envelopes.reduce((sum, e) => sum + e.allocated_amount, 0);
+  const totalAvailable = totalAllocated - envelopes.reduce((sum, e) => sum + e.spent_amount, 0);
+
+  const selectedCategoryData = BUDGET_CATEGORIES.find(c => c.name === selectedCategory);
+  const availableForSubcategory = selectedSubcategory ? getAvailableAmount(selectedSubcategory) : 0;
+  const requestedAmount = parseFloat(formData.amount) || 0;
+  const isOverBudget = requestedAmount > availableForSubcategory && selectedSubcategory;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCategory || !selectedSubcategory) {
+      toast.error("Veuillez choisir une catégorie et sous-catégorie");
+      return;
+    }
+    if (requestedAmount <= 0) {
+      toast.error("Le montant doit être supérieur à 0");
+      return;
+    }
+    if (requestedAmount > availableForSubcategory) {
+      toast.error(`Fonds insuffisants. Disponible: ${availableForSubcategory.toLocaleString("fr-FR")} BIF`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non authentifié");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile?.company_id) throw new Error("Pas de compte famille trouvé");
+
+      // 1. Insert expense record
+      const { error: expenseError } = await supabase.from("expense_records").insert({
+        company_id: profile.company_id,
+        amount: requestedAmount,
+        currency: "BIF",
+        category: selectedCategory,
+        subcategory: selectedSubcategory,
+        description: formData.description || null,
+        date: formData.date,
+      });
+      if (expenseError) throw expenseError;
+
+      // 2. Update budget envelope spent_amount
+      const envelope = envelopes.find(e => e.subcategory === selectedSubcategory);
+      if (envelope) {
+        const { error } = await supabase
+          .from("budget_envelopes")
+          .update({
+            spent_amount: envelope.spent_amount + requestedAmount,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", envelope.id);
+        if (error) throw error;
+      }
+
+      toast.success(`${requestedAmount.toLocaleString("fr-FR")} BIF dépensé dans ${selectedSubcategory}`);
+      queryClient.invalidateQueries({ queryKey: ["expense-records"] });
+      invalidateEnvelopes();
+      setFormData({ amount: "", description: "", date: new Date().toISOString().split("T")[0] });
+      setSelectedCategory("");
+      setSelectedSubcategory("");
+      setDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de l'enregistrement");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Pagination calculations
-  const totalVendors = vendors?.length || 0;
-  const totalPages = Math.ceil(totalVendors / vendorsPerPage);
-  const startIndex = (vendorPage - 1) * vendorsPerPage;
-  const endIndex = startIndex + vendorsPerPage;
-  const paginatedVendors = vendors?.slice(startIndex, endIndex) || [];
+  const formatBIF = (amount: number) => `${amount.toLocaleString("fr-FR")} BIF`;
 
-  // Helper function to get metric by type
-  const getMetric = (type: string) => {
-    return metrics?.find((m) => m.metric_type === type);
-  };
-
-  if (metricsLoading || expensesLoading || trendsLoading || vendorsLoading) {
+  if (expensesLoading || envelopesLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading expense data...</p>
-        </div>
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const colorPalette = [
-    "#FF6B6B",
-    "#FFD93D",
-    "#6BCB77",
-    "#4D96FF",
-    "#845EC2",
-    "#FF9671",
-    "#FFC75F",
-    "#008F7A",
-    "#C34A36",
-    "#FF8066",
-    "#6A2C70",
-    "#00C9A7",
-    "#F9F871",
-    "#0081CF",
-    "#D65DB1",
-    "#2C73D2",
-    "#FF5F40",
-    "#5D9C59",
-    "#F15BB5",
-    "#00BBF9",
-    "#9B5DE5",
-    "#FEE440",
-    "#00F5D4",
-    "#FB5607",
-    "#8338EC",
-  ];
-
-  const expenses = getMetric("expenses");
-  const totalExpenses = expenseCategories?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
-  const totalBudget = expenseCategories?.reduce((sum, exp) => sum + (exp.budget_amount || 0), 0) || 0;
-
-  // Calculate operating expenses (exclude COGS)
-  const operatingExpenses =
-    expenseCategories?.filter((exp) => exp.category !== "cogs").reduce((sum, exp) => sum + exp.amount, 0) || 0;
-
-  // Prepare donut chart data
-  const donutData =
-    expenseCategories?.map((expense, index) => ({
-      name: expense.name,
-      value: expense.amount,
-      color: colorPalette[index % colorPalette.length],
-    })) || [];
+  // Group expenses by category for summary
+  const expensesByCategory = expenseRecords?.reduce((acc, r) => {
+    if (!acc[r.category]) acc[r.category] = { total: 0, items: [] };
+    acc[r.category].total += r.amount;
+    acc[r.category].items.push(r);
+    return acc;
+  }, {} as Record<string, { total: number; items: typeof expenseRecords }>) || {};
 
   return (
-    <div className="space-y-0">
-      <FilterHeader filters={filters} onFiltersChange={setFilters} showFxCurrency={true} />
-
-      <div className="space-y-6 p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Expense Management</h1>
-            <p className="text-muted-foreground">Monitor and control business expenses</p>
-          </div>
+    <div className="space-y-6 p-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Sorties / Dépenses</h1>
+          <p className="text-muted-foreground">Gérez vos dépenses par catégorie avec contrôle budgétaire</p>
         </div>
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Nouvelle dépense
+        </Button>
+      </div>
 
-        {/* Expense Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MetricCard
-            title="Total Expenses"
-            value={formatWithCurrency(totalExpenses)}
-            // change={expenses ? "+5.2% vs last month" : undefined}
-            changeType="negative"
-            gradient="primary"
-            icon={<TrendingDown className="w-6 h-6" />}
-          />
-          <MetricCard
-            title="Operating Expenses"
-            value={formatWithCurrency(operatingExpenses)}
-            // change={expenseCategories && expenseCategories.length > 0 ? "+3.1% vs last month" : undefined}
-            changeType="negative"
-            icon={<Building className="w-6 h-6 text-orange-600" />}
-          />
-          <MetricCard
-            title="Budget Variance"
-            value={formatWithCurrency(totalBudget - totalExpenses)}
-            change={totalBudget > 0 ? (totalExpenses > totalBudget ? "Over budget" : "Under budget") : undefined}
-            changeType={totalExpenses > totalBudget ? "negative" : "positive"}
-            icon={<CreditCard className="w-6 h-6 text-red-600" />}
-          />
-          <MetricCard
-            title="Average Daily Spend"
-            value={formatWithCurrency(totalExpenses / 31)}
-            // change={expenses ? "+1.8% vs last month" : undefined}
-            changeType="negative"
-            icon={<AlertTriangle className="w-6 h-6 text-pink-600" />}
-          />
-        </div>
-
-        {/* Expense Categories */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Expenses by Category</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-4">
-              {expenseCategories?.slice(0, Math.ceil(expenseCategories.length / 2)).map((expense) => {
-                const iconMap = {
-                  salaries: Users,
-                  marketing: CreditCard,
-                  operations: Building,
-                  technology: Zap,
-                };
-                const IconComponent = iconMap[expense.category as keyof typeof iconMap] || AlertTriangle;
-
-                return (
-                  <div key={expense.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <IconComponent className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="font-medium">{expense.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {formatWithCurrency(expense.amount)} ({expense.percentage?.toFixed(0)}%)
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+      {/* Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-destructive/10 rounded-lg">
+                <TrendingDown className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total dépensé</p>
+                <p className="text-2xl font-bold">{formatBIF(totalSpent)}</p>
+              </div>
             </div>
-
-            <div className="space-y-4">
-              {expenseCategories?.slice(Math.ceil(expenseCategories.length / 2)).map((expense) => {
-                const iconMap = {
-                  salaries: Users,
-                  marketing: CreditCard,
-                  operations: Car,
-                  technology: Zap,
-                };
-                const IconComponent = iconMap[expense.category as keyof typeof iconMap] || AlertTriangle;
-
-                return (
-                  <div key={expense.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <IconComponent className="w-5 h-5 text-secondary" />
-                      <div>
-                        <p className="font-medium">{expense.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {formatWithCurrency(expense.amount)} ({expense.percentage?.toFixed(0)}%)
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          </CardContent>
         </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Expense Category Donut Chart */}
-          <DonutChart
-            data={donutData}
-            title="Expense Category Breakdown"
-            centerValue={formatWithCurrency(totalExpenses)}
-            centerLabel="Total Expenses"
-            onSliceClick={(entry) => openCategoryDrillDown(entry.name)}
-          />
-
-          {/* Expense Trends Bar Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Monthly Expense Trends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {expenseTrendData && expenseTrendData.length > 0 ? (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart 
-                      data={expenseTrendData} 
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      barSize={45}
-                      barGap={8}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                      <XAxis
-                        dataKey="period"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                        tickFormatter={(value) => {
-                          const converted = convertAmount(value, 'USD');
-                          if (converted >= 1000000) return `${currencySymbol}${(converted / 1000000).toFixed(1)}M`;
-                          if (converted >= 1000) return `${currencySymbol}${(converted / 1000).toFixed(0)}K`;
-                          return `${currencySymbol}${converted.toFixed(0)}`;
-                        }}
-                      />
-                      <Tooltip
-                        formatter={(value: any) => [formatWithCurrency(value), ""]}
-                        labelStyle={{ color: "hsl(var(--foreground))" }}
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                      />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                      <Bar
-                        dataKey="expenses"
-                        fill="hsl(var(--primary-500))"
-                        name="Total Expenses"
-                        radius={[8, 8, 0, 0]}
-                        onClick={(data: any) => {
-                          const payload = data?.payload;
-                          if (!payload) return;
-                          const dateKey = payload.dateKey as string | undefined;
-                          if (!dateKey) return;
-                          const granularity: "day" | "month" = dateKey.length === 10 ? "day" : "month";
-                          openPeriodDrillDown(dateKey, payload.period, granularity);
-                        }}
-                        cursor="pointer"
-                      />
-                      <Bar 
-                        dataKey="cogs" 
-                        fill="hsl(var(--primary-400))" 
-                        name="COGS" 
-                        radius={[8, 8, 0, 0]} 
-                      />
-                      <Bar 
-                        dataKey="opex" 
-                        fill="hsl(var(--primary-300))" 
-                        name="Operating Expenses" 
-                        radius={[8, 8, 0, 0]} 
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <span className="inline-flex items-center justify-center rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground">
-                    No Data
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Budget vs Actual */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Budget vs Actual</h3>
-            {totalBudget > 0 || totalExpenses > 0 ? (
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Budgeted</span>
-                    <span className="text-sm">{formatWithCurrency(totalBudget)}</span>
-                  </div>
-                  <div className="w-full h-2 bg-muted rounded-full">
-                    <div
-                      className="h-full bg-success rounded-full"
-                      style={{ width: totalBudget > 0 ? "100%" : "0%" }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Actual</span>
-                    <span className="text-sm">{formatWithCurrency(totalExpenses)}</span>
-                  </div>
-                  <div className="w-full h-2 bg-muted rounded-full">
-                    <div
-                      className={`h-full rounded-full ${totalBudget > 0 ? (totalExpenses > totalBudget ? "bg-destructive" : "bg-success") : "bg-muted"}`}
-                      style={{
-                        width: totalBudget > 0 ? `${Math.min((totalExpenses / totalBudget) * 100, 100)}%` : "0%",
-                      }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Variance</span>
-                    <span
-                      className={`text-sm font-semibold ${totalBudget > 0 ? (totalExpenses > totalBudget ? "text-destructive" : "text-success") : "text-muted-foreground"}`}
-                    >
-                      {totalBudget > 0 && (totalExpenses > totalBudget ? "+" : "-")}
-                      {formatWithCurrency(Math.abs(totalBudget - totalExpenses))}(
-                      {totalBudget > 0 ? (((totalExpenses - totalBudget) / totalBudget) * 100).toFixed(1) + "%" : "N/A"}
-                      )
-                    </span>
-                  </div>
-                </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <TrendingDown className="w-5 h-5 text-green-600" />
               </div>
-            ) : (
-              <div className="flex items-center justify-center py-8">
-                <Badge variant="secondary">No Data</Badge>
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {drillDownData && (
-          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-            <ExpenseDrillDownTable
-              drillDownData={drillDownData}
-              onClose={clearDrillDown}
-              isLoading={drillDownLoading}
-              formatCurrency={formatWithCurrency}
-            />
-          </div>
-        )}
-
-        {/* Top Vendors */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Top Vendors & Suppliers</h3>
-          <div className="space-y-3">
-            {paginatedVendors.map((vendor) => (
-              <div
-                key={vendor.id}
-                className="flex items-center justify-between p-3 hover:bg-muted rounded-lg transition-colors"
-              >
-                <div>
-                  <p className="font-medium">{vendor.name}</p>
-                  <p className="text-xs text-muted-foreground">{vendor.category}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">{formatWithCurrency(vendor.amount)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
-                Showing {startIndex + 1}-{Math.min(endIndex, totalVendors)} of {totalVendors}
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setVendorPage((prev) => Math.max(1, prev - 1))}
-                  disabled={vendorPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm">
-                  Page {vendorPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setVendorPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={vendorPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+              <div>
+                <p className="text-sm text-muted-foreground">Budget disponible</p>
+                <p className="text-2xl font-bold text-green-600">{formatBIF(totalAvailable)}</p>
               </div>
             </div>
-          )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <TrendingDown className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Budget total alloué</p>
+                <p className="text-2xl font-bold">{formatBIF(totalAllocated)}</p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
       </div>
+
+      {/* Budget Status per Category */}
+      {BUDGET_CATEGORIES.map((cat) => {
+        const catEnvelopes = envelopes.filter(e => e.category === cat.name);
+        const catAllocated = catEnvelopes.reduce((s, e) => s + e.allocated_amount, 0);
+        const catSpent = catEnvelopes.reduce((s, e) => s + e.spent_amount, 0);
+        const catAvailable = catAllocated - catSpent;
+
+        return (
+          <Card key={cat.name}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{cat.name}</CardTitle>
+                <div className="flex gap-4 text-sm">
+                  <span>Dépensé: <span className="font-semibold text-destructive">{formatBIF(catSpent)}</span></span>
+                  <span>Disponible: <span className="font-semibold text-green-600">{formatBIF(catAvailable)}</span></span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {catEnvelopes.map((env) => {
+                  const available = env.allocated_amount - env.spent_amount;
+                  const usedPct = env.allocated_amount > 0 ? (env.spent_amount / env.allocated_amount) * 100 : 0;
+                  return (
+                    <div key={env.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{env.subcategory}</span>
+                        {usedPct > 90 && <AlertTriangle className="w-4 h-4 text-destructive" />}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${usedPct > 90 ? 'bg-destructive' : usedPct > 70 ? 'bg-orange-500' : 'bg-green-500'}`}
+                            style={{ width: `${Math.min(usedPct, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-sm min-w-[100px] text-right">
+                          <span className="text-destructive">{formatBIF(env.spent_amount)}</span>
+                          {" / "}
+                          <span className="text-muted-foreground">{formatBIF(env.allocated_amount)}</span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {/* Recent Expense Records */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Historique des dépenses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {expenseRecords && expenseRecords.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Sous-catégorie</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Montant</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenseRecords.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{new Date(record.date).toLocaleDateString("fr-FR")}</TableCell>
+                    <TableCell><Badge variant="outline">{record.category}</Badge></TableCell>
+                    <TableCell>{record.subcategory}</TableCell>
+                    <TableCell>{record.description || "—"}</TableCell>
+                    <TableCell className="text-right font-semibold text-destructive">{formatBIF(record.amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">Aucune dépense enregistrée</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Expense Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvelle dépense</DialogTitle>
+            <DialogDescription>
+              Choisissez la catégorie et vérifiez le solde disponible
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Category */}
+            <div>
+              <label className="text-sm font-medium">Catégorie *</label>
+              <Select value={selectedCategory} onValueChange={(v) => { setSelectedCategory(v); setSelectedSubcategory(""); }}>
+                <SelectTrigger><SelectValue placeholder="Choisir une catégorie" /></SelectTrigger>
+                <SelectContent>
+                  {BUDGET_CATEGORIES.map(cat => (
+                    <SelectItem key={cat.name} value={cat.name}>{cat.name} ({cat.totalPercentage}%)</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Subcategory */}
+            {selectedCategory && (
+              <div>
+                <label className="text-sm font-medium">Sous-catégorie *</label>
+                <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+                  <SelectTrigger><SelectValue placeholder="Choisir une sous-catégorie" /></SelectTrigger>
+                  <SelectContent>
+                    {selectedCategoryData?.subcategories.map(sub => {
+                      const available = getAvailableAmount(sub.name);
+                      return (
+                        <SelectItem key={sub.name} value={sub.name}>
+                          {sub.name} — Dispo: {available.toLocaleString("fr-FR")} BIF
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Available balance info */}
+            {selectedSubcategory && (
+              <div className={`p-3 rounded-lg ${isOverBudget ? 'bg-destructive/10 border border-destructive/30' : 'bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800'}`}>
+                <p className="text-sm font-medium">
+                  Solde disponible pour "{selectedSubcategory}":
+                </p>
+                <p className={`text-lg font-bold ${isOverBudget ? 'text-destructive' : 'text-green-600'}`}>
+                  {formatBIF(availableForSubcategory)}
+                </p>
+                {isOverBudget && (
+                  <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3 h-3" /> Montant supérieur au solde disponible
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Amount */}
+            <div>
+              <label className="text-sm font-medium">Montant (BIF) *</label>
+              <Input
+                type="number"
+                placeholder="Ex: 50000"
+                value={formData.amount}
+                onChange={e => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                required
+                min="1"
+                max={availableForSubcategory || undefined}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Description</label>
+              <Input
+                placeholder="Note optionnelle"
+                value={formData.description}
+                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Date</label>
+              <Input
+                type="date"
+                value={formData.date}
+                onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isSubmitting || !!isOverBudget}>
+                {isSubmitting ? "Enregistrement..." : "Enregistrer la dépense"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-export default Expenses;
-
+}
