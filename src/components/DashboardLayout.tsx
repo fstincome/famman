@@ -34,7 +34,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || "");
-        setIsDemoUser(user.email === "demo@financeflow.app");
       }
     };
     getUser();
