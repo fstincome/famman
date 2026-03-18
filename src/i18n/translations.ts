@@ -5,6 +5,7 @@ export const translations = {
       dashboard: "Tableau de bord",
       income: "Entrées / Revenus",
       expenses: "Sorties / Dépenses",
+      statistics: "Statistiques",
       patrimony: "Patrimoine",
       events: "Événements",
       projects: "Nos projets",
