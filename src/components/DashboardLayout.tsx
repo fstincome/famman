@@ -23,7 +23,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [userEmail, setUserEmail] = useState<string>("");
-  const [isDemoUser, setIsDemoUser] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
