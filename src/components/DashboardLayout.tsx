@@ -98,7 +98,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <NotificationPopover />
               <Button variant="outline" onClick={handleSignOut} className="gap-2">
                 <LogOut className="w-4 h-4" />
-                {isDemoUser ? t.auth.exitDemo : t.auth.logOut}
+                {t.auth.signOut}
               </Button>
             </div>
           </header>

@@ -427,8 +427,8 @@ export const translations = {
       familyMembers: "Family Members",
     },
     app: {
-      name: "FamilyFlow",
-      tagline: "Family Management",
+      name: "Gestion Familiale",
+      tagline: "Finances & Organization",
       connectAccount: "Connect Account",
       connectData: "Connect Data",
       uploadCSV: "Upload CSV",
