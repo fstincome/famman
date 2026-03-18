@@ -215,8 +215,8 @@ export const translations = {
     },
     // App
     app: {
-      name: "FamilyFlow",
-      tagline: "Gestion Familiale",
+      name: "Gestion Familiale",
+      tagline: "Finances & Organisation",
       connectAccount: "Connecter un compte",
       connectData: "Connecter des données",
       uploadCSV: "Importer un CSV",
@@ -427,8 +427,8 @@ export const translations = {
       familyMembers: "Family Members",
     },
     app: {
-      name: "FamilyFlow",
-      tagline: "Family Management",
+      name: "Gestion Familiale",
+      tagline: "Finances & Organization",
       connectAccount: "Connect Account",
       connectData: "Connect Data",
       uploadCSV: "Upload CSV",

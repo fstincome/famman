@@ -23,7 +23,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [userEmail, setUserEmail] = useState<string>("");
-  const [isDemoUser, setIsDemoUser] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -35,7 +34,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || "");
-        setIsDemoUser(user.email === "demo@financeflow.app");
       }
     };
     getUser();
@@ -69,13 +67,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const handleSignOut = async () => {
-    if (isDemoUser) {
-      try {
-        await supabase.rpc('reset_demo_data');
-      } catch (error) {
-        console.error('Error resetting demo data:', error);
-      }
-    }
     const { error } = await supabase.auth.signOut();
     if (!error) {
       toast({ title: t.auth.signOut, description: "✓" });
@@ -107,7 +98,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <NotificationPopover />
               <Button variant="outline" onClick={handleSignOut} className="gap-2">
                 <LogOut className="w-4 h-4" />
-                {isDemoUser ? t.auth.exitDemo : t.auth.logOut}
+                {t.auth.signOut}
               </Button>
             </div>
           </header>
