@@ -20,6 +20,7 @@ import Projects from "./pages/Projects";
 import Debts from "./pages/Debts";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import Statistics from "./pages/Statistics";
 
 const queryClient = new QueryClient();
 
