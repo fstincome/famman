@@ -18,6 +18,7 @@ export function FinancialSidebar() {
     { title: t.nav.dashboard, url: "/", icon: LayoutDashboard },
     { title: t.nav.income, url: "/income", icon: TrendingUp },
     { title: t.nav.expenses, url: "/expenses", icon: Receipt },
+    { title: t.nav.statistics, url: "/statistics", icon: BarChart3 },
     { title: t.nav.patrimony, url: "/patrimony", icon: Building2 },
     { title: t.nav.events, url: "/events", icon: Calendar },
     { title: t.nav.projects, url: "/projects", icon: Rocket },

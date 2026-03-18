@@ -229,6 +229,7 @@ export const translations = {
       dashboard: "Dashboard",
       income: "Income / Revenue",
       expenses: "Expenses",
+      statistics: "Statistics",
       patrimony: "Assets & Patrimony",
       events: "Events",
       projects: "Our Projects",
