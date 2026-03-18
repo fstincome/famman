@@ -1042,6 +1042,251 @@ export type Database = {
           },
         ]
       }
+      family_assets: {
+        Row: {
+          asset_type: string
+          company_id: string
+          created_at: string
+          currency: string
+          current_value: number | null
+          description: string | null
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          purchase_date: string | null
+          purchase_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          asset_type?: string
+          company_id: string
+          created_at?: string
+          currency?: string
+          current_value?: number | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          asset_type?: string
+          company_id?: string
+          created_at?: string
+          currency?: string
+          current_value?: number | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          purchase_date?: string | null
+          purchase_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_assets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_debts: {
+        Row: {
+          category: string | null
+          company_id: string
+          counterparty: string
+          created_at: string
+          currency: string
+          debt_type: string
+          due_date: string | null
+          id: string
+          interest_rate: number | null
+          monthly_payment: number | null
+          name: string
+          notes: string | null
+          original_amount: number
+          remaining_balance: number
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          company_id: string
+          counterparty: string
+          created_at?: string
+          currency?: string
+          debt_type?: string
+          due_date?: string | null
+          id?: string
+          interest_rate?: number | null
+          monthly_payment?: number | null
+          name: string
+          notes?: string | null
+          original_amount?: number
+          remaining_balance?: number
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          company_id?: string
+          counterparty?: string
+          created_at?: string
+          currency?: string
+          debt_type?: string
+          due_date?: string | null
+          id?: string
+          interest_rate?: number | null
+          monthly_payment?: number | null
+          name?: string
+          notes?: string | null
+          original_amount?: number
+          remaining_balance?: number
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_debts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_events: {
+        Row: {
+          actual_cost: number | null
+          budget: number | null
+          company_id: string
+          created_at: string
+          currency: string
+          description: string | null
+          end_date: string | null
+          event_type: string
+          id: string
+          is_recurring: boolean | null
+          location: string | null
+          participants: string[] | null
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          budget?: number | null
+          company_id: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          end_date?: string | null
+          event_type?: string
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          participants?: string[] | null
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          budget?: number | null
+          company_id?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          end_date?: string | null
+          event_type?: string
+          id?: string
+          is_recurring?: boolean | null
+          location?: string | null
+          participants?: string[] | null
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_projects: {
+        Row: {
+          budget: number | null
+          company_id: string
+          created_at: string
+          currency: string
+          deadline: string | null
+          description: string | null
+          id: string
+          name: string
+          priority: string
+          progress: number | null
+          spent: number | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          budget?: number | null
+          company_id: string
+          created_at?: string
+          currency?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          priority?: string
+          progress?: number | null
+          spent?: number | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          budget?: number | null
+          company_id?: string
+          created_at?: string
+          currency?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          priority?: string
+          progress?: number | null
+          spent?: number | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       filter_segments: {
         Row: {
           company_id: string
