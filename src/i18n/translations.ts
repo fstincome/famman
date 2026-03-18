@@ -215,8 +215,8 @@ export const translations = {
     },
     // App
     app: {
-      name: "FamilyFlow",
-      tagline: "Gestion Familiale",
+      name: "Gestion Familiale",
+      tagline: "Finances & Organisation",
       connectAccount: "Connecter un compte",
       connectData: "Connecter des données",
       uploadCSV: "Importer un CSV",
