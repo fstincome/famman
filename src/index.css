@@ -1,0 +1,305 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Modern Financial Dashboard Design System */
+
+@layer base {
+  :root {
+    /* Core Background & Text */
+    --background: 0 0% 100%;
+    --foreground: 222 84% 5%;        /* Shades/Black */
+
+    /* Cards & Surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 5%;
+    --card-hover: 220 13% 96%;
+
+    /* Primary - Blue System (from PDF) */
+    --primary: 210 100% 50%;         /* Primary blue */
+    --primary-foreground: 0 0% 100%;
+    --primary-50: 210 100% 95%;      /* Lightest blue */
+    --primary-100: 210 100% 90%;     
+    --primary-200: 210 100% 80%;     
+    --primary-300: 210 100% 70%;     /* Light blue */
+    --primary-400: 210 100% 60%;     
+    --primary-500: 210 100% 50%;     /* Base primary */
+    --primary-600: 210 100% 40%;     /* Darker blue */
+    --primary-700: 210 100% 30%;     
+    --primary-800: 217 91% 20%;      /* Deep blue */
+    --primary-900: 222 84% 10%;      /* Darkest blue */
+
+    /* Secondary - Pink/Magenta System (from PDF) */
+    --secondary: 330 81% 60%;        /* Base pink */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-50: 330 81% 95%;     /* Lightest pink */
+    --secondary-100: 330 81% 85%;    
+    --secondary-200: 330 81% 75%;    /* Light pink */
+    --secondary-300: 330 81% 65%;    
+    --secondary-400: 330 81% 60%;    
+    --secondary-500: 330 81% 55%;    /* Base secondary */
+    --secondary-600: 330 81% 45%;    /* Darker pink */
+    --secondary-700: 330 81% 35%;    
+    --secondary-800: 330 81% 25%;    
+    --secondary-900: 330 81% 15%;    
+
+    /* Success - Green System (from PDF) */
+    --success: 142 76% 45%;          /* Base green */
+    --success-foreground: 0 0% 100%;
+    --success-50: 142 76% 95%;       /* Lightest green */
+    --success-100: 142 76% 85%;      
+    --success-200: 142 76% 75%;      /* Light green */
+    --success-300: 142 76% 65%;      
+    --success-400: 142 76% 55%;      
+    --success-500: 142 76% 45%;      /* Base success */
+    --success-600: 142 76% 35%;      /* Darker green */
+    --success-700: 142 76% 25%;      
+    --success-800: 142 76% 15%;      
+    --success-900: 142 76% 8%;       
+
+    /* Warning - Orange System (from PDF) */  
+    --warning: 25 95% 55%;           /* Base orange */
+    --warning-foreground: 0 0% 100%;
+    --warning-50: 25 95% 95%;        /* Lightest orange */
+    --warning-100: 25 95% 85%;       
+    --warning-200: 25 95% 75%;       /* Light orange */
+    --warning-300: 25 95% 65%;       
+    --warning-400: 25 95% 60%;       
+    --warning-500: 25 95% 55%;       /* Base warning */
+    --warning-600: 25 95% 45%;       /* Darker orange */
+    --warning-700: 25 95% 35%;       
+    --warning-800: 25 95% 25%;       
+    --warning-900: 25 95% 15%;       
+
+    /* Danger/Error - Red System (from PDF) */
+    --destructive: 0 84% 50%;        /* Base red */
+    --destructive-foreground: 0 0% 100%;
+    --error-50: 0 84% 95%;           /* Lightest red */
+    --error-100: 0 84% 85%;          
+    --error-200: 0 84% 75%;          /* Light red */
+    --error-300: 0 84% 65%;          
+    --error-400: 0 84% 60%;          
+    --error-500: 0 84% 50%;          /* Base error */
+    --error-600: 0 84% 40%;          /* Darker red */
+    --error-700: 0 84% 30%;          
+    --error-800: 0 84% 20%;          
+    --error-900: 0 84% 10%;          
+
+    /* Neutral - Blue-Gray System (from PDF) */
+    --neutral-50: 220 13% 95%;       /* Lightest neutral */
+    --neutral-100: 220 13% 90%;      
+    --neutral-200: 220 13% 80%;      /* Light neutral */
+    --neutral-300: 220 13% 70%;      
+    --neutral-400: 220 13% 60%;      
+    --neutral-500: 220 13% 50%;      /* Base neutral */
+    --neutral-600: 220 13% 40%;      /* Darker neutral */
+    --neutral-700: 220 13% 30%;      
+    --neutral-800: 220 13% 20%;      
+    --neutral-900: 220 13% 10%;      
+
+    /* Shades - Pure Grays (from PDF) */
+    --shade-50: 0 0% 98%;            /* Nearly white */
+    --shade-100: 0 0% 90%;           
+    --shade-200: 0 0% 80%;           /* Light gray */
+    --shade-300: 0 0% 70%;           
+    --shade-400: 0 0% 60%;           
+    --shade-500: 0 0% 50%;           /* Mid gray */
+    --shade-600: 0 0% 40%;           /* Darker gray */
+    --shade-700: 0 0% 30%;           
+    --shade-800: 0 0% 15%;           
+    --shade-900: 0 0% 5%;            /* Near black */
+
+    /* Semantic mappings using new color system */
+    --muted: var(--shade-100);
+    --muted-foreground: var(--neutral-500);
+    --accent: var(--shade-50);
+    --accent-foreground: var(--shade-900);
+
+    /* Borders & Inputs */
+    --border: var(--neutral-200);
+    --input: var(--neutral-200);
+    --ring: var(--primary-500);
+
+    /* Popover & Dropdown */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 84% 5%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 56%), hsl(210 100% 70%));
+    --gradient-secondary: linear-gradient(135deg, hsl(341 84% 62%), hsl(341 84% 75%));
+    --gradient-success: linear-gradient(135deg, hsl(142 69% 58%), hsl(142 69% 70%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 40% 98%));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px hsl(220 13% 18% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(220 13% 18% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(220 13% 18% / 0.1);
+    --shadow-primary: 0 4px 14px hsl(210 100% 56% / 0.25);
+
+    /* Animation */
+    --transition-all: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease-out;
+
+    --radius: 8px;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 13% 18%;
+    --sidebar-primary: 210 100% 56%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 220 13% 18%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 210 100% 56%;
+  }
+
+  .dark {
+    --background: var(--shade-900);
+    --foreground: var(--shade-50);
+    --card: var(--shade-800);
+    --card-foreground: var(--shade-50);
+    --card-hover: var(--shade-700);
+    
+    /* Dark mode color adjustments */
+    --primary: var(--primary-400);
+    --primary-foreground: var(--shade-900);
+    --secondary: var(--secondary-300);
+    --secondary-foreground: var(--shade-900);
+    --success: var(--success-400);
+    --success-foreground: var(--shade-900);
+    --warning: var(--warning-400);
+    --warning-foreground: var(--shade-900);
+    --destructive: var(--error-400);
+    --destructive-foreground: var(--shade-50);
+    
+    --muted: var(--shade-800);
+    --muted-foreground: var(--neutral-400);
+    --accent: var(--shade-700);
+    --accent-foreground: var(--shade-50);
+    --border: var(--shade-700);
+    --input: var(--shade-700);
+    --ring: var(--primary-400);
+    
+    --popover: var(--shade-800);
+    --popover-foreground: var(--shade-50);
+    
+    --sidebar-background: var(--shade-800);
+    --sidebar-foreground: var(--shade-50);
+    --sidebar-primary: var(--primary-400);
+    --sidebar-primary-foreground: var(--shade-900);
+    --sidebar-accent: var(--shade-700);
+    --sidebar-accent-foreground: var(--shade-50);
+    --sidebar-border: var(--shade-700);
+    --sidebar-ring: var(--primary-400);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Typography System - Based on Design Guide */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-manrope font-semibold;
+  }
+
+  /* Headings - Manrope Semibold */
+  h1 { 
+    font-size: 32px;
+    line-height: 38.4px;
+  }
+  h2 { 
+    font-size: 28px;
+    line-height: 33.6px;
+  }
+  h3 { 
+    font-size: 24px;
+    line-height: 28.8px;
+  }
+  h4 { 
+    font-size: 20px;
+    line-height: 24px;
+  }
+  h5 { 
+    font-size: 18px;
+    line-height: 21.6px;
+  }
+  h6 { 
+    font-size: 16px;
+    line-height: 19.2px;
+  }
+
+  /* Body Text - Inter Regular */
+  .text-body-large { 
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .text-body { 
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .text-body-small { 
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 18px;
+  }
+  .text-body-xs { 
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 10px;
+    line-height: 14px;
+  }
+
+  /* Button Text - Inter Medium */
+  .text-button { 
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 14px;
+  }
+  .text-button-small { 
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 12px;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Ensure chart tooltips appear above all chart elements */
+  .recharts-tooltip-wrapper {
+    z-index: 9999 !important;
+    pointer-events: none;
+  }
+  
+  .recharts-tooltip-wrapper > * {
+    pointer-events: auto;
+  }
+}
