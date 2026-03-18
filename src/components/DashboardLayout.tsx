@@ -67,13 +67,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const handleSignOut = async () => {
-    if (isDemoUser) {
-      try {
-        await supabase.rpc('reset_demo_data');
-      } catch (error) {
-        console.error('Error resetting demo data:', error);
-      }
-    }
     const { error } = await supabase.auth.signOut();
     if (!error) {
       toast({ title: t.auth.signOut, description: "✓" });
