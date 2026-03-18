@@ -1,435 +1,230 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Calendar, TrendingUp, BarChart3, PieChart, Plus, Trash2 } from "lucide-react";
-import { FilterHeader, FilterState } from "@/components/FilterHeader";
-import { ETLManager } from "@/components/ETLManager";
-import { useFinancialMetrics, useRevenueSources, useExpenseCategories } from "@/hooks/useFinancialData";
-import { useScheduledReports } from "@/hooks/useScheduledReports";
-import { ScheduleReportDialog } from "@/components/ScheduleReportDialog";
-import {
-  generateProfitLossReport,
-  generateBalanceSheetReport,
-  generateCashFlowReport,
-  generateTaxSummaryReport,
-  generateBulkExport
-} from "@/lib/reportGenerators";
+import { FileText, Download, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { exportToCSV, exportToExcel, exportToPDF } from "@/lib/exportUtils";
+
+const formatBIF = (n: number) => n.toLocaleString("fr-BI") + " BIF";
 
 const Reports = () => {
-  const [filters, setFilters] = useState<FilterState>({
-    dateRange: {},
-    currency: 'USD'
+  const { t } = useLanguage();
+
+  const { data: incomes = [] } = useQuery({
+    queryKey: ["report-incomes"],
+    queryFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from("income_records").select("*").eq("company_id", profile.company_id).order("date", { ascending: false });
+      return data || [];
+    },
   });
-  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState<any>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [scheduleToDelete, setScheduleToDelete] = useState<string | null>(null);
 
-  // Fetch financial data for reports
-  const { data: metrics } = useFinancialMetrics(filters.dateRange);
-  const { data: revenueSources } = useRevenueSources(filters.dateRange);
-  const { data: expenseCategories } = useExpenseCategories(filters.dateRange);
-  
-  // Fetch scheduled reports
-  const { 
-    scheduledReports, 
-    isLoading: isLoadingSchedules,
-    createScheduledReport, 
-    updateScheduledReport,
-    deleteScheduledReport 
-  } = useScheduledReports();
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["report-expenses"],
+    queryFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from("expense_records").select("*").eq("company_id", profile.company_id).order("date", { ascending: false });
+      return data || [];
+    },
+  });
 
-  const financialData = {
-    metrics,
-    revenueSources,
-    expenseCategories
+  const { data: envelopes = [] } = useQuery({
+    queryKey: ["report-envelopes"],
+    queryFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from("budget_envelopes").select("*").eq("company_id", profile.company_id);
+      return data || [];
+    },
+  });
+
+  const { data: debts = [] } = useQuery({
+    queryKey: ["report-debts"],
+    queryFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from("family_debts").select("*").eq("company_id", profile.company_id);
+      return data || [];
+    },
+  });
+
+  const totalIncome = incomes.reduce((s, r) => s + Number(r.amount), 0);
+  const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount), 0);
+  const totalBudget = envelopes.reduce((s, e) => s + Number(e.allocated_amount), 0);
+  const totalSpent = envelopes.reduce((s, e) => s + Number(e.spent_amount), 0);
+  const totalDebtBalance = debts.filter(d => d.debt_type === "debt").reduce((s, d) => s + Number(d.remaining_balance), 0);
+  const totalCreditBalance = debts.filter(d => d.debt_type === "credit").reduce((s, d) => s + Number(d.remaining_balance), 0);
+
+  const generateIncomeExpenseReport = (fmt: "csv" | "excel" | "pdf") => {
+    // Group expenses by category
+    const expByCategory: Record<string, number> = {};
+    expenses.forEach(e => { expByCategory[e.category] = (expByCategory[e.category] || 0) + Number(e.amount); });
+
+    const rows = [
+      { Catégorie: "REVENUS TOTAUX", Montant: formatBIF(totalIncome) },
+      ...incomes.slice(0, 20).map(i => ({ Catégorie: `  ${i.source || "Revenu"} (${i.date})`, Montant: formatBIF(Number(i.amount)) })),
+      { Catégorie: "", Montant: "" },
+      { Catégorie: "DÉPENSES TOTALES", Montant: formatBIF(totalExpenses) },
+      ...Object.entries(expByCategory).map(([cat, amt]) => ({ Catégorie: `  ${cat}`, Montant: formatBIF(amt) })),
+      { Catégorie: "", Montant: "" },
+      { Catégorie: "SOLDE NET", Montant: formatBIF(totalIncome - totalExpenses) },
+    ];
+
+    const ts = new Date().toISOString().slice(0, 10);
+    const filename = `Revenus_Depenses_${ts}`;
+    if (fmt === "csv") exportToCSV(rows, filename);
+    else if (fmt === "excel") exportToExcel(rows, filename, "Revenus & Dépenses");
+    else exportToPDF("Rapport Revenus & Dépenses", ["Catégorie", "Montant"], rows.map(r => [r.Catégorie, r.Montant]), filename);
   };
 
-  const handleDownloadReport = (reportType: string) => {
+  const generateBudgetReport = (fmt: "csv" | "excel" | "pdf") => {
+    const rows = envelopes.map(e => ({
+      Catégorie: e.category,
+      "Sous-catégorie": e.subcategory,
+      Alloué: formatBIF(Number(e.allocated_amount)),
+      Dépensé: formatBIF(Number(e.spent_amount)),
+      Disponible: formatBIF(Number(e.allocated_amount) - Number(e.spent_amount)),
+      "% utilisé": Number(e.allocated_amount) > 0 ? Math.round((Number(e.spent_amount) / Number(e.allocated_amount)) * 100) + "%" : "0%",
+    }));
+
+    const ts = new Date().toISOString().slice(0, 10);
+    const filename = `Budget_${ts}`;
+    if (fmt === "csv") exportToCSV(rows, filename);
+    else if (fmt === "excel") exportToExcel(rows, filename, "Budget");
+    else exportToPDF("Rapport Budget", ["Catégorie", "Sous-catégorie", "Alloué", "Dépensé", "Disponible", "% utilisé"], rows.map(r => [r.Catégorie, r["Sous-catégorie"], r.Alloué, r.Dépensé, r.Disponible, r["% utilisé"]]), filename);
+  };
+
+  const generateDebtReport = (fmt: "csv" | "excel" | "pdf") => {
+    const rows = debts.map(d => ({
+      Nom: d.name,
+      Type: d.debt_type === "debt" ? "Dette" : "Créance",
+      Contrepartie: d.counterparty,
+      "Montant initial": formatBIF(Number(d.original_amount)),
+      "Reste à payer": formatBIF(Number(d.remaining_balance)),
+      Statut: d.status === "paid" ? "Payé" : "En cours",
+    }));
+
+    const ts = new Date().toISOString().slice(0, 10);
+    const filename = `Dettes_Creances_${ts}`;
+    if (fmt === "csv") exportToCSV(rows, filename);
+    else if (fmt === "excel") exportToExcel(rows, filename, "Dettes & Créances");
+    else exportToPDF("Rapport Dettes & Créances", ["Nom", "Type", "Contrepartie", "Montant initial", "Reste à payer", "Statut"], rows.map(r => [r.Nom, r.Type, r.Contrepartie, r["Montant initial"], r["Reste à payer"], r.Statut]), filename);
+  };
+
+  const handleDownload = (reportId: string, fmt: "csv" | "excel" | "pdf") => {
     try {
-      switch (reportType) {
-        case 'profit-loss':
-          generateProfitLossReport(financialData, 'pdf', filters.currency);
-          break;
-        case 'balance-sheet':
-          generateBalanceSheetReport(financialData, 'pdf', filters.currency);
-          break;
-        case 'cash-flow':
-          generateCashFlowReport(financialData, 'pdf', filters.currency);
-          break;
-        case 'tax-summary':
-          generateTaxSummaryReport(financialData, 'pdf', filters.currency);
-          break;
-      }
-      toast({
-        title: "Report downloaded",
-        description: "Your report has been generated successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Export failed",
-        description: "There was an error generating your report.",
-        variant: "destructive",
-      });
+      if (reportId === "income-expense") generateIncomeExpenseReport(fmt);
+      else if (reportId === "budget") generateBudgetReport(fmt);
+      else if (reportId === "debt") generateDebtReport(fmt);
+      toast({ title: "✓", description: "Rapport téléchargé avec succès" });
+    } catch {
+      toast({ title: "Erreur", description: "Échec du téléchargement", variant: "destructive" });
     }
   };
 
-  const handleExportFormat = (formatType: string) => {
-    try {
-      let format: 'csv' | 'excel' | 'pdf' = 'pdf';
-      
-      if (formatType === 'Excel (XLSX)') format = 'excel';
-      else if (formatType === 'CSV') format = 'csv';
-      else if (formatType === 'PDF') format = 'pdf';
-      
-      if (formatType === 'QuickBooks') {
-        toast({
-          title: "Coming soon",
-          description: "QuickBooks integration is not yet available.",
-        });
-        return;
-      }
-
-      generateBulkExport(financialData, format, filters.currency);
-      toast({
-        title: "Export complete",
-        description: `All reports have been exported as ${formatType}.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Export failed",
-        description: "There was an error exporting your data.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleBulkExport = () => {
-    try {
-      generateBulkExport(financialData, 'pdf', filters.currency);
-      toast({
-        title: "Bulk export complete",
-        description: "All reports have been downloaded as PDF files.",
-      });
-    } catch (error) {
-      toast({
-        title: "Export failed",
-        description: "There was an error with the bulk export.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleScheduleSubmit = async (data: any) => {
-    try {
-      if (editingSchedule) {
-        await updateScheduledReport.mutateAsync({ id: editingSchedule.id, ...data });
-        toast({
-          title: "Schedule updated",
-          description: "Report schedule has been updated successfully.",
-        });
-      } else {
-        await createScheduledReport.mutateAsync(data);
-        toast({
-          title: "Schedule created",
-          description: "Report has been scheduled successfully.",
-        });
-      }
-      setEditingSchedule(null);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save schedule.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteSchedule = async () => {
-    if (!scheduleToDelete) return;
-    try {
-      await deleteScheduledReport.mutateAsync(scheduleToDelete);
-      toast({
-        title: "Schedule deleted",
-        description: "Report schedule has been deleted.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete schedule.",
-        variant: "destructive",
-      });
-    }
-    setDeleteDialogOpen(false);
-    setScheduleToDelete(null);
-  };
   const reports = [
     {
-      id: 'profit-loss',
-      name: "Profit & Loss Statement",
-      description: "Comprehensive income statement for the selected period",
+      id: "income-expense",
+      name: "Revenus & Dépenses",
+      description: "Synthèse des revenus et dépenses par catégorie",
       icon: TrendingUp,
-      lastGenerated: "2 hours ago",
-      status: "ready"
+      stats: `${formatBIF(totalIncome)} revenus · ${formatBIF(totalExpenses)} dépenses`,
     },
     {
-      id: 'balance-sheet',
-      name: "Balance Sheet",
-      description: "Assets, liabilities, and equity overview",
-      icon: BarChart3,
-      lastGenerated: "1 day ago",
-      status: "ready"
+      id: "budget",
+      name: "Suivi Budget",
+      description: "État des enveloppes budgétaires et consommation",
+      icon: Wallet,
+      stats: `${formatBIF(totalSpent)} / ${formatBIF(totalBudget)} utilisé`,
     },
     {
-      id: 'cash-flow',
-      name: "Cash Flow Statement",
-      description: "Operating, investing, and financing activities",
-      icon: PieChart,
-      lastGenerated: "3 hours ago",
-      status: "ready"
+      id: "debt",
+      name: "Dettes & Créances",
+      description: "Situation des dettes et créances en cours",
+      icon: TrendingDown,
+      stats: `${formatBIF(totalDebtBalance)} dettes · ${formatBIF(totalCreditBalance)} créances`,
     },
-    {
-      id: 'tax-summary',
-      name: "Tax Summary Report",
-      description: "Tax obligations and deductions summary",
-      icon: FileText,
-      lastGenerated: "1 week ago",
-      status: "ready"
-    }
-  ];
-
-  const exportFormats = [
-    { name: "Excel (XLSX)", description: "Spreadsheet format with formulas", icon: "📊" },
-    { name: "PDF", description: "Professional formatted document", icon: "📄" },
-    { name: "CSV", description: "Comma-separated values for analysis", icon: "📈" },
-    { name: "QuickBooks", description: "Direct integration with QuickBooks", icon: "💼" }
   ];
 
   return (
-    <div className="space-y-0">
-      <FilterHeader 
-        filters={filters}
-        onFiltersChange={setFilters}
-        showFxCurrency={true}
-      />
-      
-      <div className="space-y-6 p-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reports & Export</h1>
-          <p className="text-muted-foreground">
-            Generate financial reports and export data in various formats
-          </p>
-        </div>
-
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        <Button onClick={() => toast({ title: "Coming soon", description: "Custom report generation will be available soon." })}>
-          <FileText className="w-4 h-4 mr-2" />
-          Generate New Report
-        </Button>
-        <Button variant="outline" onClick={() => {
-          setEditingSchedule(null);
-          setScheduleDialogOpen(true);
-        }}>
-          <Calendar className="w-4 h-4 mr-2" />
-          Schedule Report
-        </Button>
-        <Button variant="outline" onClick={handleBulkExport}>
-          <Download className="w-4 h-4 mr-2" />
-          Bulk Export
-        </Button>
+    <div className="space-y-6 p-4">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Rapports & Export</h1>
+        <p className="text-muted-foreground">Générez et téléchargez vos rapports financiers</p>
       </div>
 
-      {/* Available Reports */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Available Reports</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          {reports.map((report, index) => (
-            <div key={index} className="flex flex-col justify-between p-4 border rounded-lg min-h-[160px]">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <report.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-medium">{report.name}</div>
-                    <div className="text-sm text-muted-foreground">{report.description}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Last generated: {report.lastGenerated}
-                    </div>
-                  </div>
-                </div>
-                <Badge 
-                  variant="secondary"
-                  className="text-white"
-                >
-                  {report.status === 'ready' ? 'Ready' : 'Generating...'}
-                </Badge>
-              </div>
-              {report.status === 'ready' ? (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => handleDownloadReport(report.id)}
-                >
-                  <Download className="w-3 h-3 mr-1" />
-                  Download
-                </Button>
-              ) : (
-                <Button size="sm" variant="outline" className="w-full" disabled>
-                  <Download className="w-3 h-3 mr-1" />
-                  Generating...
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Solde Net</CardTitle></CardHeader>
+          <CardContent><p className={`text-2xl font-bold ${totalIncome - totalExpenses >= 0 ? "text-green-600" : "text-destructive"}`}>{formatBIF(totalIncome - totalExpenses)}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Budget Disponible</CardTitle></CardHeader>
+          <CardContent><p className="text-2xl font-bold text-foreground">{formatBIF(totalBudget - totalSpent)}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Dettes Restantes</CardTitle></CardHeader>
+          <CardContent><p className="text-2xl font-bold text-destructive">{formatBIF(totalDebtBalance)}</p></CardContent>
+        </Card>
+      </div>
 
-      {/* ETL Data Management */}
-      <ETLManager />
-
-      {/* Export Formats */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Export Formats</h3>
-        <div className="grid gap-3 md:grid-cols-2">
-          {exportFormats.map((format, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+      {/* Reports */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {reports.map(report => (
+          <Card key={report.id} className="flex flex-col">
+            <CardHeader>
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{format.icon}</span>
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <report.icon className="w-5 h-5 text-primary" />
+                </div>
                 <div>
-                  <div className="font-medium">{format.name}</div>
-                  <div className="text-sm text-muted-foreground">{format.description}</div>
+                  <CardTitle className="text-base">{report.name}</CardTitle>
+                  <p className="text-xs text-muted-foreground">{report.description}</p>
                 </div>
               </div>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => handleExportFormat(format.name)}
-              >
-                Export
-              </Button>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Scheduled Reports */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Scheduled Reports</h3>
-          <Button size="sm" onClick={() => {
-            setEditingSchedule(null);
-            setScheduleDialogOpen(true);
-          }}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Schedule
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {isLoadingSchedules ? (
-            <div className="text-center p-6 text-muted-foreground">
-              Loading schedules...
-            </div>
-          ) : scheduledReports && scheduledReports.length > 0 ? (
-            scheduledReports.map((schedule) => (
-              <div key={schedule.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <div className="font-medium">{schedule.report_name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {schedule.frequency.charAt(0).toUpperCase() + schedule.frequency.slice(1)} • 
-                    Next run: {new Date(schedule.next_run_date).toLocaleDateString()} • 
-                    Format: {schedule.format.toUpperCase()}
-                  </div>
-                  {schedule.recipients.length > 0 && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Recipients: {schedule.recipients.join(", ")}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={schedule.is_active ? "secondary" : "outline"}>
-                    {schedule.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => {
-                      setEditingSchedule(schedule);
-                      setScheduleDialogOpen(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => {
-                      setScheduleToDelete(schedule.id);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg">
-              <div className="text-center">
-                <Calendar className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <div className="font-medium">No scheduled reports</div>
-                <div className="text-sm text-muted-foreground mb-3">
-                  Set up automated report generation
-                </div>
-                <Button size="sm" onClick={() => {
-                  setEditingSchedule(null);
-                  setScheduleDialogOpen(true);
-                }}>
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Schedule Report
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-between gap-3">
+              <p className="text-sm font-medium text-muted-foreground">{report.stats}</p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => handleDownload(report.id, "pdf")}>
+                  <Download className="w-3 h-3 mr-1" />PDF
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => handleDownload(report.id, "excel")}>
+                  <Download className="w-3 h-3 mr-1" />Excel
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => handleDownload(report.id, "csv")}>
+                  <Download className="w-3 h-3 mr-1" />CSV
                 </Button>
               </div>
-            </div>
-          )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Bulk Export */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">Export Complet</h3>
+            <p className="text-sm text-muted-foreground">Télécharger tous les rapports d'un coup</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => { handleDownload("income-expense", "pdf"); handleDownload("budget", "pdf"); handleDownload("debt", "pdf"); }}>
+              <FileText className="w-4 h-4 mr-2" />Tout en PDF
+            </Button>
+            <Button variant="outline" onClick={() => { handleDownload("income-expense", "excel"); handleDownload("budget", "excel"); handleDownload("debt", "excel"); }}>
+              <FileText className="w-4 h-4 mr-2" />Tout en Excel
+            </Button>
+          </div>
         </div>
       </Card>
-      
-      <ScheduleReportDialog
-        open={scheduleDialogOpen}
-        onOpenChange={setScheduleDialogOpen}
-        onSubmit={handleScheduleSubmit}
-        initialData={editingSchedule}
-      />
-      
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Scheduled Report</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this scheduled report? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSchedule}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      </div>
     </div>
   );
 };
