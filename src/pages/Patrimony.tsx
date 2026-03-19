@@ -28,7 +28,7 @@ export default function Patrimony() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", asset_type: "real_estate", description: "", purchase_price: "", current_value: "", currency: "USD", location: "", purchase_date: "" });
+  const [form, setForm] = useState({ name: "", asset_type: "real_estate", description: "", purchase_price: "", current_value: "", currency: "BIF", location: "", purchase_date: "" });
 
   const { data: assets = [], isLoading } = useQuery({
     queryKey: ["family-assets"],
