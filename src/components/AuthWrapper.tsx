@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { LayoutDashboard, Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
