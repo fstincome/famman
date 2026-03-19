@@ -70,9 +70,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-            <LayoutDashboard className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src={logoImg} alt="Logiciel Familial" className="w-10 h-10 rounded-lg object-contain mx-auto mb-4" />
           <p className="text-muted-foreground">Chargement...</p>
         </div>
       </div>
