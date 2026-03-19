@@ -1,18 +1,51 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, ShieldCheck, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, ShieldCheck, Users, Download, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Progress } from "@/components/ui/progress";
+import { generateBackupSQL, purgeCompanyData, downloadSQL } from "@/lib/backupUtils";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const formatBIF = (amount: number) => {
   return `${Math.round(amount).toLocaleString('fr-FR')} BIF`;
 };
 
 export default function Overview() {
-  const { t } = useLanguage();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [backingUp, setBackingUp] = useState(false);
+  const [purging, setPurging] = useState(false);
 
+  const handleBackup = async () => {
+    setBackingUp(true);
+    try {
+      const sql = await generateBackupSQL();
+      downloadSQL(sql);
+      toast({ title: "Backup généré", description: "Le fichier .sql a été téléchargé." });
+    } catch (e) {
+      toast({ title: "Erreur", description: "Impossible de générer le backup.", variant: "destructive" });
+    }
+    setBackingUp(false);
+  };
+
+  const handlePurge = async () => {
+    if (!confirm("⚠️ Êtes-vous sûr de vouloir vider toutes les données ? Cette action est irréversible. Assurez-vous d'avoir fait un backup d'abord.")) return;
+    setPurging(true);
+    try {
+      await purgeCompanyData();
+      queryClient.invalidateQueries();
+      toast({ title: "Données vidées", description: "Toutes les données ont été supprimées (compte utilisateur conservé)." });
+    } catch (e) {
+      toast({ title: "Erreur", description: "Impossible de vider les données.", variant: "destructive" });
+    }
+    setPurging(false);
+  };
+
+  const { t } = useLanguage();
   // Fetch income records
   const { data: incomeRecords, isLoading: incomeLoading } = useQuery({
     queryKey: ['dashboard-income'],
@@ -118,9 +151,21 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t.dashboard.title}</h1>
-        <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{t.dashboard.title}</h1>
+          <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleBackup} disabled={backingUp} className="gap-2">
+            <Download className="w-4 h-4" />
+            {backingUp ? 'Génération...' : 'Backup .sql'}
+          </Button>
+          <Button variant="destructive" onClick={handlePurge} disabled={purging} className="gap-2">
+            <Trash2 className="w-4 h-4" />
+            {purging ? 'Suppression...' : 'Vider les données'}
+          </Button>
+        </div>
       </div>
 
       {/* Hero KPI Cards */}
