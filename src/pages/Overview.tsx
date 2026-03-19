@@ -1,10 +1,14 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, ShieldCheck, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, ShieldCheck, Users, Download, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Progress } from "@/components/ui/progress";
+import { generateBackupSQL, purgeCompanyData, downloadSQL } from "@/lib/backupUtils";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const formatBIF = (amount: number) => {
   return `${Math.round(amount).toLocaleString('fr-FR')} BIF`;
