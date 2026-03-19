@@ -83,9 +83,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         <div className="flex-1 flex items-center justify-center p-8">
           <Card className="w-full max-w-md p-8">
             <div className="text-center mb-8">
-              <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-                <LayoutDashboard className="w-7 h-7 text-primary-foreground" />
-              </div>
+              <img src={logoImg} alt="Logiciel Familial" className="w-14 h-14 rounded-xl object-contain mx-auto mb-4" />
               <h1 className="text-2xl font-bold">Gestion Familiale</h1>
               <p className="text-muted-foreground mt-2">
                 Connectez-vous à votre espace familial
