@@ -138,7 +138,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
         <div className="hidden lg:flex flex-1 bg-gradient-primary p-8 items-center justify-center text-primary-foreground">
           <div className="max-w-md text-center">
-            <LayoutDashboard className="w-16 h-16 mx-auto mb-8 opacity-90" />
+            <img src={logoImg} alt="Logiciel Familial" className="w-20 h-20 mx-auto mb-8 opacity-90 rounded-xl" />
             <h2 className="text-3xl font-bold mb-4">Gestion Familiale</h2>
             <p className="text-lg opacity-90 leading-relaxed">
               Gérez les finances de votre famille, suivez les revenus et dépenses,
