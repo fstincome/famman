@@ -1,0 +1,17 @@
+{
+  "name": "Logiciel Familial",
+  "short_name": "Familial",
+  "description": "Gestion Familiale - Finances & Organisation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1805,6 +1805,7 @@ export type Database = {
           company_id: string
           completed_at: string | null
           created_at: string
+          deadline: string | null
           id: string
           is_completed: boolean
           project_id: string
@@ -1816,6 +1817,7 @@ export type Database = {
           company_id: string
           completed_at?: string | null
           created_at?: string
+          deadline?: string | null
           id?: string
           is_completed?: boolean
           project_id: string
@@ -1827,6 +1829,7 @@ export type Database = {
           company_id?: string
           completed_at?: string | null
           created_at?: string
+          deadline?: string | null
           id?: string
           is_completed?: boolean
           project_id?: string
