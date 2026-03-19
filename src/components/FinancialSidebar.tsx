@@ -5,6 +5,7 @@ import { LayoutDashboard, TrendingUp, Receipt, Building2, Calendar, Rocket, Cred
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
+import logoImg from "@/assets/logo.png";
 
 export function FinancialSidebar() {
   const { state } = useSidebar();
