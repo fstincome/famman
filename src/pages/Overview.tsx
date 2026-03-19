@@ -151,9 +151,21 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t.dashboard.title}</h1>
-        <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{t.dashboard.title}</h1>
+          <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleBackup} disabled={backingUp} className="gap-2">
+            <Download className="w-4 h-4" />
+            {backingUp ? 'Génération...' : 'Backup .sql'}
+          </Button>
+          <Button variant="destructive" onClick={handlePurge} disabled={purging} className="gap-2">
+            <Trash2 className="w-4 h-4" />
+            {purging ? 'Suppression...' : 'Vider les données'}
+          </Button>
+        </div>
       </div>
 
       {/* Hero KPI Cards */}
