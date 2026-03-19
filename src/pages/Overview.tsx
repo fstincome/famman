@@ -15,8 +15,37 @@ const formatBIF = (amount: number) => {
 };
 
 export default function Overview() {
-  const { t } = useLanguage();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [backingUp, setBackingUp] = useState(false);
+  const [purging, setPurging] = useState(false);
 
+  const handleBackup = async () => {
+    setBackingUp(true);
+    try {
+      const sql = await generateBackupSQL();
+      downloadSQL(sql);
+      toast({ title: "Backup généré", description: "Le fichier .sql a été téléchargé." });
+    } catch (e) {
+      toast({ title: "Erreur", description: "Impossible de générer le backup.", variant: "destructive" });
+    }
+    setBackingUp(false);
+  };
+
+  const handlePurge = async () => {
+    if (!confirm("⚠️ Êtes-vous sûr de vouloir vider toutes les données ? Cette action est irréversible. Assurez-vous d'avoir fait un backup d'abord.")) return;
+    setPurging(true);
+    try {
+      await purgeCompanyData();
+      queryClient.invalidateQueries();
+      toast({ title: "Données vidées", description: "Toutes les données ont été supprimées (compte utilisateur conservé)." });
+    } catch (e) {
+      toast({ title: "Erreur", description: "Impossible de vider les données.", variant: "destructive" });
+    }
+    setPurging(false);
+  };
+
+  const { t } = useLanguage();
   // Fetch income records
   const { data: incomeRecords, isLoading: incomeLoading } = useQuery({
     queryKey: ['dashboard-income'],
