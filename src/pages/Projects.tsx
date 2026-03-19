@@ -18,14 +18,6 @@ import { fr } from "date-fns/locale";
 
 const formatBIF = (n: number) => n.toLocaleString("fr-BI") + " BIF";
 
-const DEFAULT_TASKS = [
-  "Définir les objectifs et le périmètre",
-  "Établir le budget détaillé",
-  "Planifier les étapes clés",
-  "Identifier les ressources nécessaires",
-  "Valider le plan avec la famille",
-];
-
 type ProjectTask = {
   id: string;
   project_id: string;
@@ -34,7 +26,10 @@ type ProjectTask = {
   task_order: number;
   is_completed: boolean;
   completed_at: string | null;
+  deadline: string | null;
 };
+
+type TaskInput = { name: string; deadline: string };
 
 function getComputedStatus(project: any, tasks: ProjectTask[]): { status: string; label: string; color: string } {
   if (project.status === "suspended") {
@@ -50,13 +45,15 @@ function getComputedStatus(project: any, tasks: ProjectTask[]): { status: string
   const deadline = project.deadline ? new Date(project.deadline) : null;
   const startDate = project.start_date ? new Date(project.start_date) : null;
 
-  if (deadline && isPast(deadline) && !allDone) {
+  // Check if any individual task is past its deadline
+  const hasLateTask = tasks.some(t => !t.is_completed && t.deadline && isPast(new Date(t.deadline)));
+
+  if ((deadline && isPast(deadline) && !allDone) || hasLateTask) {
     return { status: "late", label: "En retard", color: "bg-destructive text-white" };
   }
 
   const someDone = tasks.some(t => t.is_completed);
   if (someDone) {
-    // Check if we're past 75% of timeline but less than 50% tasks done
     if (startDate && deadline) {
       const totalDays = differenceInDays(deadline, startDate);
       const elapsed = differenceInDays(today, startDate);
@@ -81,6 +78,8 @@ function getComputedStatus(project: any, tasks: ProjectTask[]): { status: string
   return { status: "not_started", label: "Non démarré", color: "bg-muted text-muted-foreground" };
 }
 
+const EMPTY_TASKS: TaskInput[] = Array.from({ length: 5 }, () => ({ name: "", deadline: "" }));
+
 export default function Projects() {
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -88,6 +87,11 @@ export default function Projects() {
   const [open, setOpen] = useState(false);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", description: "", priority: "medium", budget: "", start_date: "", deadline: "" });
+  const [taskInputs, setTaskInputs] = useState<TaskInput[]>(EMPTY_TASKS.map(t => ({ ...t })));
+
+  const updateTaskInput = (index: number, field: keyof TaskInput, value: string) => {
+    setTaskInputs(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
+  };
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["family-projects"],
@@ -116,7 +120,6 @@ export default function Projects() {
       const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
       if (!profile?.company_id) throw new Error("No company");
 
-      // Create project
       const { data: newProject, error } = await supabase.from("family_projects").insert({
         company_id: profile.company_id,
         name: project.name,
@@ -131,13 +134,16 @@ export default function Projects() {
       }).select().single();
       if (error) throw error;
 
-      // Create 5 default tasks
-      const tasks = DEFAULT_TASKS.map((name, i) => ({
+      const validTasks = taskInputs.filter(t => t.name.trim());
+      if (validTasks.length === 0) throw new Error("Au moins une tâche est requise");
+
+      const tasks = validTasks.map((t, i) => ({
         project_id: newProject.id,
         company_id: profile.company_id,
-        task_name: name,
+        task_name: t.name.trim(),
         task_order: i + 1,
         is_completed: false,
+        deadline: t.deadline || null,
       }));
       const { error: taskError } = await supabase.from("project_tasks").insert(tasks);
       if (taskError) throw taskError;
@@ -147,7 +153,8 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ["project-tasks"] });
       setOpen(false);
       setForm({ name: "", description: "", priority: "medium", budget: "", start_date: "", deadline: "" });
-      toast({ title: "✓", description: "Projet créé avec 5 tâches initiales" });
+      setTaskInputs(EMPTY_TASKS.map(t => ({ ...t })));
+      toast({ title: "✓", description: "Projet créé avec succès" });
     },
   });
 
@@ -159,7 +166,6 @@ export default function Projects() {
       }).eq("id", taskId);
       if (error) throw error;
 
-      // Update project progress
       const newCompleted = completed ? completedCount + 1 : completedCount - 1;
       const progress = Math.round((newCompleted / totalTasks) * 100);
       const status = newCompleted === totalTasks ? "completed" : "in_progress";
@@ -191,6 +197,8 @@ export default function Projects() {
 
   const getTasksForProject = (projectId: string) => allTasks.filter(t => t.project_id === projectId);
 
+  const validTaskCount = taskInputs.filter(t => t.name.trim()).length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -202,7 +210,7 @@ export default function Projects() {
           <DialogTrigger asChild>
             <Button><Plus className="w-4 h-4 mr-2" />{t.projects.addProject}</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{t.projects.addProject}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <Input placeholder={t.common.name} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
@@ -214,15 +222,37 @@ export default function Projects() {
               <Input type="number" placeholder="Budget (BIF)" value={form.budget} onChange={e => setForm({ ...form, budget: e.target.value })} />
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-sm text-muted-foreground">Date début</label><Input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} /></div>
-                <div><label className="text-sm text-muted-foreground">Date fin</label><Input type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} /></div>
+                <div><label className="text-sm text-muted-foreground">Date fin globale</label><Input type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} /></div>
               </div>
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-2">5 tâches initiales seront créées :</p>
-                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                  {DEFAULT_TASKS.map((task, i) => <li key={i}>{task}</li>)}
-                </ol>
+
+              {/* 5 custom tasks with deadlines */}
+              <div className="p-4 bg-muted rounded-lg space-y-3">
+                <p className="text-sm font-semibold">Définissez les 5 étapes du projet :</p>
+                {taskInputs.map((task, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-end">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Étape {i + 1} {i === 0 && <span className="text-destructive">*</span>}</label>
+                      <Input
+                        placeholder={`Ex: ${["Définir les objectifs", "Établir le budget", "Planifier les étapes", "Identifier les ressources", "Valider le plan"][i]}`}
+                        value={task.name}
+                        onChange={e => updateTaskInput(i, "name", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Échéance</label>
+                      <Input type="date" value={task.deadline} onChange={e => updateTaskInput(i, "deadline", e.target.value)} />
+                    </div>
+                  </div>
+                ))}
               </div>
-              <Button className="w-full" onClick={() => addMutation.mutate(form)} disabled={!form.name || addMutation.isPending}>{t.common.save}</Button>
+
+              <Button
+                className="w-full"
+                onClick={() => addMutation.mutate(form)}
+                disabled={!form.name || validTaskCount === 0 || addMutation.isPending}
+              >
+                {t.common.save}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -231,21 +261,9 @@ export default function Projects() {
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{projects.length}</p></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">En cours</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-primary">{projects.filter(p => {
-          const tasks = getTasksForProject(p.id);
-          const s = getComputedStatus(p, tasks);
-          return s.status === "in_progress";
-        }).length}</p></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">En retard</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-destructive">{projects.filter(p => {
-          const tasks = getTasksForProject(p.id);
-          const s = getComputedStatus(p, tasks);
-          return s.status === "late" || s.status === "at_risk";
-        }).length}</p></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Terminés</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-green-600">{projects.filter(p => {
-          const tasks = getTasksForProject(p.id);
-          const s = getComputedStatus(p, tasks);
-          return s.status === "completed";
-        }).length}</p></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">En cours</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-primary">{projects.filter(p => getComputedStatus(p, getTasksForProject(p.id)).status === "in_progress").length}</p></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">En retard</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-destructive">{projects.filter(p => { const s = getComputedStatus(p, getTasksForProject(p.id)).status; return s === "late" || s === "at_risk"; }).length}</p></CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Terminés</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-green-600">{projects.filter(p => getComputedStatus(p, getTasksForProject(p.id)).status === "completed").length}</p></CardContent></Card>
       </div>
 
       {/* Project Cards */}
@@ -266,7 +284,7 @@ export default function Projects() {
             <Card key={project.id} className={isSuspended ? "opacity-60" : ""}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <CardTitle className="text-lg">{project.name}</CardTitle>
                     <Badge className={computed.color}>
                       {computed.status === "late" && <AlertTriangle className="w-3 h-3 mr-1" />}
@@ -277,12 +295,7 @@ export default function Projects() {
                     <Badge variant="outline">{priorityLabels[project.priority] || project.priority}</Badge>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => suspendMutation.mutate({ id: project.id, currentStatus: project.status })}
-                      title={isSuspended ? "Reprendre" : "Suspendre"}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => suspendMutation.mutate({ id: project.id, currentStatus: project.status })} title={isSuspended ? "Reprendre" : "Suspendre"}>
                       {isSuspended ? <PlayCircle className="w-4 h-4 text-green-600" /> : <PauseCircle className="w-4 h-4 text-yellow-600" />}
                       <span className="ml-1 text-xs">{isSuspended ? "Reprendre" : "Suspendre"}</span>
                     </Button>
@@ -295,7 +308,6 @@ export default function Projects() {
               <CardContent className="space-y-3">
                 {project.description && <p className="text-sm text-muted-foreground">{project.description}</p>}
 
-                {/* Progress */}
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span>Avancement: {completedCount}/{tasks.length} tâches</span>
@@ -304,7 +316,6 @@ export default function Projects() {
                   <Progress value={progress} className={computed.status === "late" ? "[&>div]:bg-destructive" : ""} />
                 </div>
 
-                {/* Meta */}
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                   {project.budget > 0 && <span>Budget: {formatBIF(Number(project.budget))}</span>}
                   {project.start_date && <span>Début: {format(new Date(project.start_date), "dd/MM/yyyy")}</span>}
@@ -322,31 +333,40 @@ export default function Projects() {
                     <h4 className="font-semibold text-sm">Tâches du projet</h4>
                     {tasks.length === 0 ? (
                       <p className="text-sm text-muted-foreground">Aucune tâche</p>
-                    ) : tasks.map(task => (
-                      <div key={task.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
-                        <Checkbox
-                          checked={task.is_completed}
-                          disabled={isSuspended}
-                          onCheckedChange={(checked) => {
-                            toggleTaskMutation.mutate({
-                              taskId: task.id,
-                              completed: !!checked,
-                              projectId: project.id,
-                              totalTasks: tasks.length,
-                              completedCount,
-                            });
-                          }}
-                        />
-                        <span className={`text-sm flex-1 ${task.is_completed ? "line-through text-muted-foreground" : ""}`}>
-                          {task.task_order}. {task.task_name}
-                        </span>
-                        {task.is_completed && task.completed_at && (
-                          <span className="text-xs text-muted-foreground">
-                            ✓ {format(new Date(task.completed_at), "dd/MM", { locale: fr })}
+                    ) : tasks.map(task => {
+                      const taskLate = !task.is_completed && task.deadline && isPast(new Date(task.deadline));
+                      return (
+                        <div key={task.id} className={`flex items-center gap-3 p-2 rounded-md hover:bg-muted ${taskLate ? "bg-destructive/10" : ""}`}>
+                          <Checkbox
+                            checked={task.is_completed}
+                            disabled={isSuspended}
+                            onCheckedChange={(checked) => {
+                              toggleTaskMutation.mutate({
+                                taskId: task.id,
+                                completed: !!checked,
+                                projectId: project.id,
+                                totalTasks: tasks.length,
+                                completedCount,
+                              });
+                            }}
+                          />
+                          <span className={`text-sm flex-1 ${task.is_completed ? "line-through text-muted-foreground" : ""}`}>
+                            {task.task_order}. {task.task_name}
                           </span>
-                        )}
-                      </div>
-                    ))}
+                          {task.deadline && (
+                            <span className={`text-xs ${taskLate ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                              📅 {format(new Date(task.deadline), "dd/MM/yyyy")}
+                              {taskLate && " ⚠️"}
+                            </span>
+                          )}
+                          {task.is_completed && task.completed_at && (
+                            <span className="text-xs text-green-600">
+                              ✓ {format(new Date(task.completed_at), "dd/MM", { locale: fr })}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

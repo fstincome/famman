@@ -61,7 +61,7 @@ export default function Patrimony() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-assets"] });
       setOpen(false);
-      setForm({ name: "", asset_type: "real_estate", description: "", purchase_price: "", current_value: "", currency: "USD", location: "", purchase_date: "" });
+      setForm({ name: "", asset_type: "real_estate", description: "", purchase_price: "", current_value: "", currency: "BIF", location: "", purchase_date: "" });
       toast({ title: t.common.save, description: "✓" });
     },
   });
