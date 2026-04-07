@@ -123,7 +123,7 @@ export default function Patrimony() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{t.patrimony.totalValue}</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">${totalValue.toLocaleString()}</p></CardContent>
+          <CardContent><p className="text-2xl font-bold">{totalValue.toLocaleString()} BIF</p></CardContent>
         </Card>
         {ASSET_TYPES.map(type => {
           const Icon = assetIcons[type];
