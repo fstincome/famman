@@ -57,30 +57,51 @@ export type Database = {
       }
       accounts: {
         Row: {
+          account_number: string | null
+          account_type: string
           balance: number
+          bank_name: string | null
           company_id: string
           created_at: string
           currency: string
+          holder_name: string | null
+          iban: string | null
           id: string
+          is_active: boolean
           name: string
+          notes: string | null
           updated_at: string
         }
         Insert: {
+          account_number?: string | null
+          account_type?: string
           balance?: number
+          bank_name?: string | null
           company_id: string
           created_at?: string
           currency?: string
+          holder_name?: string | null
+          iban?: string | null
           id?: string
+          is_active?: boolean
           name: string
+          notes?: string | null
           updated_at?: string
         }
         Update: {
+          account_number?: string | null
+          account_type?: string
           balance?: number
+          bank_name?: string | null
           company_id?: string
           created_at?: string
           currency?: string
+          holder_name?: string | null
+          iban?: string | null
           id?: string
+          is_active?: boolean
           name?: string
+          notes?: string | null
           updated_at?: string
         }
         Relationships: []
