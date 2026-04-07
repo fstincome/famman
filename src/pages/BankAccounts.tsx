@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit2, Landmark, Wallet, CreditCard, PiggyBank, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Trash2, Edit2, Landmark, Wallet, CreditCard, PiggyBank, CheckCircle, XCircle, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { format } from "date-fns";
 
 const ACCOUNT_TYPES = ["checking", "savings", "business", "mobile_money", "other"] as const;
 
@@ -38,6 +39,11 @@ export default function BankAccounts() {
     name: "", bank_name: "", account_number: "", iban: "", account_type: "checking",
     holder_name: "", balance: "", currency: "BIF", notes: "", is_active: true,
   });
+
+  // Transaction dialog state
+  const [txOpen, setTxOpen] = useState(false);
+  const [txAccount, setTxAccount] = useState<any>(null);
+  const [txForm, setTxForm] = useState({ type: "deposit" as "deposit" | "withdrawal", amount: "", description: "" });
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ["family-bank-accounts"],
@@ -91,6 +97,30 @@ export default function BankAccounts() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["family-bank-accounts"] }),
   });
 
+  // Transaction mutation — updates the balance
+  const txMutation = useMutation({
+    mutationFn: async ({ accountId, currentBalance, type, amount, description }: {
+      accountId: string; currentBalance: number; type: "deposit" | "withdrawal"; amount: number; description: string;
+    }) => {
+      const newBalance = type === "deposit" ? currentBalance + amount : currentBalance - amount;
+      if (type === "withdrawal" && newBalance < 0) {
+        throw new Error("Solde insuffisant");
+      }
+      const { error } = await supabase.from("accounts").update({ balance: newBalance }).eq("id", accountId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["family-bank-accounts"] });
+      setTxOpen(false);
+      setTxAccount(null);
+      setTxForm({ type: "deposit", amount: "", description: "" });
+      toast({ title: t.common.save, description: "✓" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    },
+  });
+
   const resetForm = () => {
     setForm({ name: "", bank_name: "", account_number: "", iban: "", account_type: "checking", holder_name: "", balance: "", currency: "BIF", notes: "", is_active: true });
     setEditId(null);
@@ -107,27 +137,40 @@ export default function BankAccounts() {
     setOpen(true);
   };
 
+  const openTransaction = (acc: any) => {
+    setTxAccount(acc);
+    setTxForm({ type: "deposit", amount: "", description: "" });
+    setTxOpen(true);
+  };
+
   const labels = accountTypeLabels[language] || accountTypeLabels.fr;
   const totalBalance = accounts.reduce((s, a) => s + Number(a.balance || 0), 0);
   const activeAccounts = accounts.filter((a: any) => a.is_active !== false);
+
+  const txLabels = language === "fr"
+    ? { deposit: "Versement", withdrawal: "Retrait", title: "Opération bancaire", amountLabel: "Montant", descLabel: "Motif / Description", confirm: "Confirmer l'opération", currentBalance: "Solde actuel", newBalance: "Nouveau solde" }
+    : { deposit: "Deposit", withdrawal: "Withdrawal", title: "Bank Operation", amountLabel: "Amount", descLabel: "Reason / Description", confirm: "Confirm operation", currentBalance: "Current balance", newBalance: "New balance" };
+
+  const txAmount = parseFloat(txForm.amount) || 0;
+  const txNewBalance = txAccount ? (txForm.type === "deposit" ? Number(txAccount.balance) + txAmount : Number(txAccount.balance) - txAmount) : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t.bankAccounts?.title || "Comptes bancaires"}</h1>
-          <p className="text-muted-foreground">{t.bankAccounts?.subtitle || "Gérez les comptes bancaires de la famille"}</p>
+          <h1 className="text-2xl font-bold text-foreground">{t.bankAccounts.title}</h1>
+          <p className="text-muted-foreground">{t.bankAccounts.subtitle}</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); else setOpen(true); }}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />{t.bankAccounts?.addAccount || "Ajouter un compte"}</Button>
+            <Button><Plus className="w-4 h-4 mr-2" />{t.bankAccounts.addAccount}</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>{editId ? t.common.edit : (t.bankAccounts?.addAccount || "Ajouter un compte")}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editId ? t.common.edit : t.bankAccounts.addAccount}</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <Input placeholder={t.bankAccounts?.accountName || "Nom du compte *"} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              <Input placeholder={t.bankAccounts.accountName + " *"} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
               <div className="grid grid-cols-2 gap-4">
-                <Input placeholder={t.bankAccounts?.bankName || "Nom de la banque"} value={form.bank_name} onChange={e => setForm({ ...form, bank_name: e.target.value })} />
+                <Input placeholder={t.bankAccounts.bankName} value={form.bank_name} onChange={e => setForm({ ...form, bank_name: e.target.value })} />
                 <Select value={form.account_type} onValueChange={v => setForm({ ...form, account_type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -135,13 +178,13 @@ export default function BankAccounts() {
                   </SelectContent>
                 </Select>
               </div>
-              <Input placeholder={t.bankAccounts?.holderName || "Titulaire du compte"} value={form.holder_name} onChange={e => setForm({ ...form, holder_name: e.target.value })} />
+              <Input placeholder={t.bankAccounts.holderName} value={form.holder_name} onChange={e => setForm({ ...form, holder_name: e.target.value })} />
               <div className="grid grid-cols-2 gap-4">
-                <Input placeholder={t.bankAccounts?.accountNumber || "Numéro de compte"} value={form.account_number} onChange={e => setForm({ ...form, account_number: e.target.value })} />
+                <Input placeholder={t.bankAccounts.accountNumber} value={form.account_number} onChange={e => setForm({ ...form, account_number: e.target.value })} />
                 <Input placeholder="IBAN" value={form.iban} onChange={e => setForm({ ...form, iban: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Input type="number" placeholder={t.bankAccounts?.balance || "Solde actuel"} value={form.balance} onChange={e => setForm({ ...form, balance: e.target.value })} />
+                <Input type="number" placeholder={t.bankAccounts.balance} value={form.balance} onChange={e => setForm({ ...form, balance: e.target.value })} />
                 <Select value={form.currency} onValueChange={v => setForm({ ...form, currency: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -154,7 +197,7 @@ export default function BankAccounts() {
               <Textarea placeholder="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} />
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked={form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked })} id="is_active" className="rounded" />
-                <label htmlFor="is_active" className="text-sm">{t.bankAccounts?.active || "Compte actif"}</label>
+                <label htmlFor="is_active" className="text-sm">{t.bankAccounts.active}</label>
               </div>
               <Button className="w-full" onClick={() => saveMutation.mutate(editId ? { ...form, id: editId } : form)} disabled={!form.name || saveMutation.isPending}>
                 {editId ? t.common.update : t.common.save}
@@ -164,18 +207,90 @@ export default function BankAccounts() {
         </Dialog>
       </div>
 
+      {/* Transaction Dialog */}
+      <Dialog open={txOpen} onOpenChange={(v) => { if (!v) { setTxOpen(false); setTxAccount(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{txLabels.title}</DialogTitle></DialogHeader>
+          {txAccount && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-sm text-muted-foreground">{txAccount.name} — {txAccount.bank_name || ""}</p>
+                <p className="text-lg font-bold">{txLabels.currentBalance}: {Number(txAccount.balance).toLocaleString()} {txAccount.currency}</p>
+              </div>
+
+              {/* Type toggle */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={txForm.type === "deposit" ? "default" : "outline"}
+                  className={txForm.type === "deposit" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
+                  onClick={() => setTxForm({ ...txForm, type: "deposit" })}
+                >
+                  <ArrowDownCircle className="w-4 h-4 mr-2" />
+                  {txLabels.deposit}
+                </Button>
+                <Button
+                  variant={txForm.type === "withdrawal" ? "default" : "outline"}
+                  className={txForm.type === "withdrawal" ? "bg-red-600 hover:bg-red-700 text-white" : ""}
+                  onClick={() => setTxForm({ ...txForm, type: "withdrawal" })}
+                >
+                  <ArrowUpCircle className="w-4 h-4 mr-2" />
+                  {txLabels.withdrawal}
+                </Button>
+              </div>
+
+              <Input
+                type="number"
+                placeholder={txLabels.amountLabel}
+                value={txForm.amount}
+                onChange={e => setTxForm({ ...txForm, amount: e.target.value })}
+                min="0"
+              />
+              <Input
+                placeholder={txLabels.descLabel}
+                value={txForm.description}
+                onChange={e => setTxForm({ ...txForm, description: e.target.value })}
+              />
+
+              {/* Preview new balance */}
+              {txAmount > 0 && (
+                <div className={`p-3 rounded-lg border-2 ${txForm.type === "deposit" ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950" : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"}`}>
+                  <p className="text-sm text-muted-foreground">{txLabels.newBalance}:</p>
+                  <p className={`text-xl font-bold ${txNewBalance < 0 ? "text-destructive" : ""}`}>
+                    {txNewBalance.toLocaleString()} {txAccount.currency}
+                  </p>
+                </div>
+              )}
+
+              <Button
+                className="w-full"
+                disabled={txAmount <= 0 || txMutation.isPending || (txForm.type === "withdrawal" && txNewBalance < 0)}
+                onClick={() => txMutation.mutate({
+                  accountId: txAccount.id,
+                  currentBalance: Number(txAccount.balance),
+                  type: txForm.type,
+                  amount: txAmount,
+                  description: txForm.description,
+                })}
+              >
+                {txLabels.confirm}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Landmark className="w-4 h-4" />{t.bankAccounts?.totalBalance || "Solde total"}</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Landmark className="w-4 h-4" />{t.bankAccounts.totalBalance}</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{totalBalance.toLocaleString()} BIF</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500" />{t.bankAccounts?.activeAccounts || "Comptes actifs"}</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><CheckCircle className="w-4 h-4" />{t.bankAccounts.activeAccounts}</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{activeAccounts.length}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Wallet className="w-4 h-4" />{t.bankAccounts?.totalAccounts || "Total comptes"}</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Wallet className="w-4 h-4" />{t.bankAccounts.totalAccounts}</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{accounts.length}</p></CardContent>
         </Card>
       </div>
@@ -186,12 +301,12 @@ export default function BankAccounts() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t.bankAccounts?.accountName || "Nom du compte"}</TableHead>
-                <TableHead>{t.bankAccounts?.bankName || "Banque"}</TableHead>
+                <TableHead>{t.bankAccounts.accountName}</TableHead>
+                <TableHead>{t.bankAccounts.bankName}</TableHead>
                 <TableHead>{t.common.type}</TableHead>
-                <TableHead>{t.bankAccounts?.holderName || "Titulaire"}</TableHead>
-                <TableHead>{t.bankAccounts?.accountNumber || "N° Compte"}</TableHead>
-                <TableHead>{t.bankAccounts?.balance || "Solde"}</TableHead>
+                <TableHead>{t.bankAccounts.holderName}</TableHead>
+                <TableHead>{t.bankAccounts.accountNumber}</TableHead>
+                <TableHead>{t.bankAccounts.balance}</TableHead>
                 <TableHead>{t.common.status}</TableHead>
                 <TableHead>{t.common.actions}</TableHead>
               </TableRow>
@@ -218,13 +333,17 @@ export default function BankAccounts() {
                     <TableCell className="font-medium">{Number(acc.balance).toLocaleString()} {acc.currency}</TableCell>
                     <TableCell>
                       {acc.is_active !== false ? (
-                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"><CheckCircle className="w-3 h-3 mr-1" />{t.bankAccounts?.active || "Actif"}</Badge>
+                        <Badge variant="default"><CheckCircle className="w-3 h-3 mr-1" />{t.bankAccounts.active}</Badge>
                       ) : (
-                        <Badge variant="secondary"><XCircle className="w-3 h-3 mr-1" />{t.bankAccounts?.inactive || "Inactif"}</Badge>
+                        <Badge variant="secondary"><XCircle className="w-3 h-3 mr-1" />{t.bankAccounts.inactive}</Badge>
                       )}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        <Button variant="outline" size="sm" onClick={() => openTransaction(acc)} title={txLabels.title}>
+                          <ArrowDownCircle className="w-4 h-4 mr-1" />
+                          <ArrowUpCircle className="w-4 h-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(acc)}><Edit2 className="w-4 h-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(acc.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </div>
