@@ -123,7 +123,7 @@ export default function Patrimony() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">{t.patrimony.totalValue}</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">${totalValue.toLocaleString()}</p></CardContent>
+          <CardContent><p className="text-2xl font-bold">{totalValue.toLocaleString()} BIF</p></CardContent>
         </Card>
         {ASSET_TYPES.map(type => {
           const Icon = assetIcons[type];
@@ -137,7 +137,7 @@ export default function Patrimony() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-lg font-bold">${typeValue.toLocaleString()}</p>
+                <p className="text-lg font-bold">{typeValue.toLocaleString()} BIF</p>
                 <p className="text-xs text-muted-foreground">{typeAssets.length} {typeAssets.length === 1 ? "actif" : "actifs"}</p>
               </CardContent>
             </Card>
@@ -168,8 +168,8 @@ export default function Patrimony() {
                 <TableRow key={asset.id}>
                   <TableCell className="font-medium">{asset.name}</TableCell>
                   <TableCell><Badge variant="secondary">{assetTypeLabels[asset.asset_type] || asset.asset_type}</Badge></TableCell>
-                  <TableCell>${Number(asset.purchase_price).toLocaleString()}</TableCell>
-                  <TableCell className="font-medium">${Number(asset.current_value).toLocaleString()}</TableCell>
+                  <TableCell>{Number(asset.purchase_price).toLocaleString()} BIF</TableCell>
+                  <TableCell className="font-medium">{Number(asset.current_value).toLocaleString()} BIF</TableCell>
                   <TableCell>{asset.location || "—"}</TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(asset.id)}>
