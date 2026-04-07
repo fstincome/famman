@@ -168,8 +168,8 @@ export default function Patrimony() {
                 <TableRow key={asset.id}>
                   <TableCell className="font-medium">{asset.name}</TableCell>
                   <TableCell><Badge variant="secondary">{assetTypeLabels[asset.asset_type] || asset.asset_type}</Badge></TableCell>
-                  <TableCell>${Number(asset.purchase_price).toLocaleString()}</TableCell>
-                  <TableCell className="font-medium">${Number(asset.current_value).toLocaleString()}</TableCell>
+                  <TableCell>{Number(asset.purchase_price).toLocaleString()} BIF</TableCell>
+                  <TableCell className="font-medium">{Number(asset.current_value).toLocaleString()} BIF</TableCell>
                   <TableCell>{asset.location || "—"}</TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(asset.id)}>
