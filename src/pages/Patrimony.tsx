@@ -137,7 +137,7 @@ export default function Patrimony() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-lg font-bold">${typeValue.toLocaleString()}</p>
+                <p className="text-lg font-bold">{typeValue.toLocaleString()} BIF</p>
                 <p className="text-xs text-muted-foreground">{typeAssets.length} {typeAssets.length === 1 ? "actif" : "actifs"}</p>
               </CardContent>
             </Card>
