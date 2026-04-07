@@ -198,6 +198,33 @@ export const translations = {
       creditCard: "Carte de crédit",
       familyLoan: "Prêt familial",
     },
+    // Contacts
+    contacts: {
+      title: "Annuaire des contacts",
+      subtitle: "Gérez tous vos contacts familiaux",
+      addContact: "Ajouter un contact",
+      phone: "Téléphone",
+      address: "Adresse",
+      totalContacts: "Total contacts",
+      withEmail: "Avec email",
+      withPhone: "Avec téléphone",
+    },
+    // Bank Accounts
+    bankAccounts: {
+      title: "Comptes bancaires",
+      subtitle: "Gérez les comptes bancaires de la famille",
+      addAccount: "Ajouter un compte",
+      accountName: "Nom du compte",
+      bankName: "Nom de la banque",
+      holderName: "Titulaire",
+      accountNumber: "N° de compte",
+      balance: "Solde",
+      totalBalance: "Solde total",
+      activeAccounts: "Comptes actifs",
+      totalAccounts: "Total comptes",
+      active: "Actif",
+      inactive: "Inactif",
+    },
     // Admin
     admin: {
       title: "Administration",
