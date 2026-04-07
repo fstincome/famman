@@ -24,6 +24,8 @@ export function FinancialSidebar() {
     { title: t.nav.events, url: "/events", icon: Calendar },
     { title: t.nav.projects, url: "/projects", icon: Rocket },
     { title: t.nav.debts, url: "/debts", icon: CreditCard },
+    { title: t.nav.contacts, url: "/contacts", icon: BookUser },
+    { title: t.nav.bankAccounts, url: "/bank-accounts", icon: Landmark },
     { title: t.nav.reports, url: "/reports", icon: FileText },
   ];
 

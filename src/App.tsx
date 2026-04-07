@@ -21,6 +21,8 @@ import Debts from "./pages/Debts";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Statistics from "./pages/Statistics";
+import Contacts from "./pages/Contacts";
+import BankAccounts from "./pages/BankAccounts";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +43,8 @@ const App = () => (
               <Route path="/events" element={<DashboardLayout><Events /></DashboardLayout>} />
               <Route path="/projects" element={<DashboardLayout><Projects /></DashboardLayout>} />
               <Route path="/debts" element={<DashboardLayout><Debts /></DashboardLayout>} />
+              <Route path="/contacts" element={<DashboardLayout><Contacts /></DashboardLayout>} />
+              <Route path="/bank-accounts" element={<DashboardLayout><BankAccounts /></DashboardLayout>} />
               <Route path="/reports" element={<DashboardLayout><Reports /></DashboardLayout>} />
               <Route path="/admin" element={<DashboardLayout><Admin /></DashboardLayout>} />
               <Route path="/profitability" element={<DashboardLayout><Profitability /></DashboardLayout>} />

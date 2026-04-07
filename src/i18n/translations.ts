@@ -264,6 +264,8 @@ export const translations = {
       projects: "Our Projects",
       debts: "Debts & Credits",
       reports: "Reports",
+      contacts: "Contacts",
+      bankAccounts: "Bank Accounts",
       receivables: "Receivables & Payables",
       admin: "Administration",
       settings: "Settings",
