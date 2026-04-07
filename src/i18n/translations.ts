@@ -11,6 +11,8 @@ export const translations = {
       projects: "Nos projets",
       debts: "Dettes / Créances",
       reports: "Rapports",
+      contacts: "Contacts",
+      bankAccounts: "Comptes bancaires",
       receivables: "Créances & Dettes",
       admin: "Administration",
       settings: "Paramètres",
