@@ -397,6 +397,70 @@ export default function Statistics() {
           </ResponsiveContainer>
         )}
       </Card>
+
+      {/* Needs Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Needs by Priority */}
+        <Card className="p-5">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <ClipboardList className="w-5 h-5" />
+            Besoins par priorité
+          </h3>
+          {needsByPriority.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={needsByPriority}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
+                >
+                  {needsByPriority.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatBIF(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        {/* Needs by Status */}
+        <Card className="p-5">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <ClipboardList className="w-5 h-5" />
+            Besoins par statut
+          </h3>
+          {needsByStatus.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={needsByStatus}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
+                >
+                  {needsByStatus.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatBIF(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
