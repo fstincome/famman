@@ -275,8 +275,8 @@ export default function Statistics() {
         {/* Monthly Income vs Expenses */}
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Entrées vs Sorties par mois
+             <BarChart3 className="w-5 h-5" />
+            {t.statistics.incomeVsExpenses}
           </h3>
           {monthlyComparison.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
