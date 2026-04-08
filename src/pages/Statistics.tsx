@@ -186,10 +186,10 @@ export default function Statistics() {
   const totalExpenses = filteredExpenses.reduce((s, r) => s + Number(r.amount), 0);
 
   const periodLabels: Record<PeriodFilter, string> = {
-    all: 'Tout',
-    month: 'Ce mois',
-    quarter: 'Ce trimestre',
-    year: 'Cette année',
+    all: t.statistics.allPeriod,
+    month: t.statistics.thisMonth,
+    quarter: t.statistics.thisQuarter,
+    year: t.statistics.thisYear,
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
