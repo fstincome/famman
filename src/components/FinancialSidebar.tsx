@@ -26,6 +26,7 @@ export function FinancialSidebar() {
     { title: t.nav.debts, url: "/debts", icon: CreditCard },
     { title: t.nav.contacts, url: "/contacts", icon: BookUser },
     { title: t.nav.bankAccounts, url: "/bank-accounts", icon: Landmark },
+    { title: t.nav.needs, url: "/needs", icon: ClipboardList },
     { title: t.nav.reports, url: "/reports", icon: FileText },
   ];
 
