@@ -7,9 +7,10 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { BarChart3, PieChart as PieChartIcon, TrendingUp, Calendar } from "lucide-react";
+import { BarChart3, PieChart as PieChartIcon, TrendingUp, Calendar, ClipboardList } from "lucide-react";
 
 const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6', '#e11d48', '#84cc16'];
+const PRIORITY_COLORS: Record<string, string> = { urgent: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#10b981' };
 
 const formatBIF = (amount: number) => `${Math.round(amount).toLocaleString('fr-FR')} BIF`;
 
