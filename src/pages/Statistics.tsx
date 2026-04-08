@@ -328,8 +328,8 @@ export default function Statistics() {
         {/* Expenses by Subcategory (Pie) */}
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <PieChartIcon className="w-5 h-5" />
-            Détail par sous-catégorie
+             <PieChartIcon className="w-5 h-5" />
+            {t.statistics.bySubcategory}
           </h3>
           {expensesBySubcategory.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
