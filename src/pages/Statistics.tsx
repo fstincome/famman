@@ -265,6 +265,9 @@ export default function Statistics() {
         <Badge variant="outline" className="text-base px-4 py-2 text-blue-600 border-blue-200">
           Solde: {formatBIF(totalIncome - totalExpenses)}
         </Badge>
+        <Badge variant="outline" className="text-base px-4 py-2 text-amber-600 border-amber-200">
+          Besoins en attente: {formatBIF(totalNeedsPending)}
+        </Badge>
       </div>
 
       {/* Charts Grid */}
