@@ -288,8 +288,8 @@ export default function Statistics() {
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Bar dataKey="income" name="Entrées" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expenses" name="Sorties" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="income" name={t.statistics.income} fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expenses" name={t.statistics.expenses} fill="#ef4444" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
