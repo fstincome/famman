@@ -159,6 +159,29 @@ export default function Statistics() {
     })).filter(e => e.allocated > 0);
   }, [envelopes]);
 
+  // 6. Needs by priority (Pie)
+  const needsByPriority = useMemo(() => {
+    const map: Record<string, number> = {};
+    (needsRecords || []).forEach(r => {
+      const p = r.priority || 'medium';
+      map[p] = (map[p] || 0) + Number(r.estimated_price);
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: PRIORITY_COLORS[name] || '#6366f1' }));
+  }, [needsRecords]);
+
+  // 7. Needs by status (Pie)
+  const needsByStatus = useMemo(() => {
+    const map: Record<string, number> = {};
+    (needsRecords || []).forEach(r => {
+      const s = r.status || 'pending';
+      map[s] = (map[s] || 0) + Number(r.estimated_price);
+    });
+    const statusColors: Record<string, string> = { pending: '#f59e0b', validated: '#10b981', cancelled: '#94a3b8' };
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: statusColors[name] || '#6366f1' }));
+  }, [needsRecords]);
+
+  const totalNeedsPending = (needsRecords || []).filter(r => r.status === 'pending').reduce((s, r) => s + Number(r.estimated_price), 0);
+
   const totalIncome = filteredIncome.reduce((s, r) => s + Number(r.amount), 0);
   const totalExpenses = filteredExpenses.reduce((s, r) => s + Number(r.amount), 0);
 
