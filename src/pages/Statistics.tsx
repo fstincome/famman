@@ -380,7 +380,7 @@ export default function Statistics() {
 
       {/* Budget Utilization (full width) */}
       <Card className="p-5">
-        <h3 className="text-lg font-semibold mb-4">Utilisation du budget par enveloppe</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.statistics.budgetUsage}</h3>
         {budgetUtilization.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">{t.common.noData}</div>
         ) : (
