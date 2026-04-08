@@ -242,10 +242,10 @@ export default function Statistics() {
           </Select>
           <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v)}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Toutes catégories" />
+              <SelectValue placeholder={t.statistics.allCategories} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes catégories</SelectItem>
+              <SelectItem value="all">{t.statistics.allCategories}</SelectItem>
               {allCategories.map(c => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
