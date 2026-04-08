@@ -223,10 +223,10 @@ export default function Statistics() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="w-6 h-6" />
-            Statistiques
+             <BarChart3 className="w-6 h-6" />
+            {t.statistics.title}
           </h1>
-          <p className="text-muted-foreground">Aperçu graphique de vos finances</p>
+          <p className="text-muted-foreground">{t.statistics.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={period} onValueChange={(v) => setPeriod(v as PeriodFilter)}>
