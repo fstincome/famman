@@ -391,8 +391,8 @@ export default function Statistics() {
               <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={110} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="spent" name="Dépensé" fill="#ef4444" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="available" name="Disponible" fill="#10b981" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="spent" name={t.statistics.spent} fill="#ef4444" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="available" name={t.statistics.available} fill="#10b981" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
