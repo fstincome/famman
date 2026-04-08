@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import Statistics from "./pages/Statistics";
 import Contacts from "./pages/Contacts";
 import BankAccounts from "./pages/BankAccounts";
+import Needs from "./pages/Needs";
 
 const queryClient = new QueryClient();
 
