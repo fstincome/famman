@@ -434,7 +434,7 @@ export default function Statistics() {
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <ClipboardList className="w-5 h-5" />
-            Besoins par statut
+            {t.statistics.needsByStatus}
           </h3>
           {needsByStatus.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
