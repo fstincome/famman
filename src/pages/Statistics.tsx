@@ -359,8 +359,8 @@ export default function Statistics() {
         {/* Cumulative Balance (Line) */}
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Évolution du solde
+             <TrendingUp className="w-5 h-5" />
+            {t.statistics.balanceEvolution}
           </h3>
           {cumulativeBalance.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
