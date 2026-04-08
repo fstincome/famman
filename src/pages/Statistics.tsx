@@ -371,7 +371,7 @@ export default function Statistics() {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="balance" name="Solde" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="balance" name={t.statistics.balance} stroke="#3b82f6" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           )}
