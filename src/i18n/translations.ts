@@ -13,6 +13,7 @@ export const translations = {
       reports: "Rapports",
       contacts: "Contacts",
       bankAccounts: "Comptes bancaires",
+      needs: "Besoins identifiés",
       receivables: "Créances & Dettes",
       admin: "Administration",
       settings: "Paramètres",
