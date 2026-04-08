@@ -1343,6 +1343,62 @@ export type Database = {
           },
         ]
       }
+      family_needs: {
+        Row: {
+          company_id: string
+          created_at: string
+          currency: string
+          description: string | null
+          estimated_price: number
+          id: string
+          priority: string
+          requested_by: string | null
+          status: string
+          title: string
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          estimated_price?: number
+          id?: string
+          priority?: string
+          requested_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          estimated_price?: number
+          id?: string
+          priority?: string
+          requested_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_needs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_projects: {
         Row: {
           budget: number | null
