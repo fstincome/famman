@@ -186,10 +186,10 @@ export default function Statistics() {
   const totalExpenses = filteredExpenses.reduce((s, r) => s + Number(r.amount), 0);
 
   const periodLabels: Record<PeriodFilter, string> = {
-    all: 'Tout',
-    month: 'Ce mois',
-    quarter: 'Ce trimestre',
-    year: 'Cette année',
+    all: t.statistics.allPeriod,
+    month: t.statistics.thisMonth,
+    quarter: t.statistics.thisQuarter,
+    year: t.statistics.thisYear,
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -223,10 +223,10 @@ export default function Statistics() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="w-6 h-6" />
-            Statistiques
+             <BarChart3 className="w-6 h-6" />
+            {t.statistics.title}
           </h1>
-          <p className="text-muted-foreground">Aperçu graphique de vos finances</p>
+          <p className="text-muted-foreground">{t.statistics.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={period} onValueChange={(v) => setPeriod(v as PeriodFilter)}>
@@ -242,10 +242,10 @@ export default function Statistics() {
           </Select>
           <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v)}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Toutes catégories" />
+              <SelectValue placeholder={t.statistics.allCategories} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes catégories</SelectItem>
+              <SelectItem value="all">{t.statistics.allCategories}</SelectItem>
               {allCategories.map(c => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
@@ -257,16 +257,16 @@ export default function Statistics() {
       {/* Summary badges */}
       <div className="flex flex-wrap gap-3">
         <Badge variant="outline" className="text-base px-4 py-2 text-green-600 border-green-200">
-          Entrées: {formatBIF(totalIncome)}
+          {t.statistics.income}: {formatBIF(totalIncome)}
         </Badge>
         <Badge variant="outline" className="text-base px-4 py-2 text-red-600 border-red-200">
-          Sorties: {formatBIF(totalExpenses)}
+          {t.statistics.expenses}: {formatBIF(totalExpenses)}
         </Badge>
         <Badge variant="outline" className="text-base px-4 py-2 text-blue-600 border-blue-200">
-          Solde: {formatBIF(totalIncome - totalExpenses)}
+          {t.statistics.balance}: {formatBIF(totalIncome - totalExpenses)}
         </Badge>
         <Badge variant="outline" className="text-base px-4 py-2 text-amber-600 border-amber-200">
-          Besoins en attente: {formatBIF(totalNeedsPending)}
+          {t.statistics.pendingNeeds}: {formatBIF(totalNeedsPending)}
         </Badge>
       </div>
 
@@ -275,8 +275,8 @@ export default function Statistics() {
         {/* Monthly Income vs Expenses */}
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Entrées vs Sorties par mois
+             <BarChart3 className="w-5 h-5" />
+            {t.statistics.incomeVsExpenses}
           </h3>
           {monthlyComparison.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
@@ -288,8 +288,8 @@ export default function Statistics() {
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Bar dataKey="income" name="Entrées" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expenses" name="Sorties" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="income" name={t.statistics.income} fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expenses" name={t.statistics.expenses} fill="#ef4444" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -298,8 +298,8 @@ export default function Statistics() {
         {/* Expenses by Category (Pie) */}
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <PieChartIcon className="w-5 h-5" />
-            Répartition par catégorie
+             <PieChartIcon className="w-5 h-5" />
+            {t.statistics.byCategory}
           </h3>
           {expensesByCategory.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
@@ -328,8 +328,8 @@ export default function Statistics() {
         {/* Expenses by Subcategory (Pie) */}
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <PieChartIcon className="w-5 h-5" />
-            Détail par sous-catégorie
+             <PieChartIcon className="w-5 h-5" />
+            {t.statistics.bySubcategory}
           </h3>
           {expensesBySubcategory.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
@@ -359,8 +359,8 @@ export default function Statistics() {
         {/* Cumulative Balance (Line) */}
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Évolution du solde
+             <TrendingUp className="w-5 h-5" />
+            {t.statistics.balanceEvolution}
           </h3>
           {cumulativeBalance.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
@@ -371,7 +371,7 @@ export default function Statistics() {
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="balance" name="Solde" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="balance" name={t.statistics.balance} stroke="#3b82f6" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -380,7 +380,7 @@ export default function Statistics() {
 
       {/* Budget Utilization (full width) */}
       <Card className="p-5">
-        <h3 className="text-lg font-semibold mb-4">Utilisation du budget par enveloppe</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.statistics.budgetUsage}</h3>
         {budgetUtilization.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">{t.common.noData}</div>
         ) : (
@@ -391,8 +391,8 @@ export default function Statistics() {
               <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={110} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar dataKey="spent" name="Dépensé" fill="#ef4444" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="available" name="Disponible" fill="#10b981" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="spent" name={t.statistics.spent} fill="#ef4444" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="available" name={t.statistics.available} fill="#10b981" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -404,7 +404,7 @@ export default function Statistics() {
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <ClipboardList className="w-5 h-5" />
-            Besoins par priorité
+            {t.statistics.needsByPriority}
           </h3>
           {needsByPriority.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
@@ -434,7 +434,7 @@ export default function Statistics() {
         <Card className="p-5">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <ClipboardList className="w-5 h-5" />
-            Besoins par statut
+            {t.statistics.needsByStatus}
           </h3>
           {needsByStatus.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
