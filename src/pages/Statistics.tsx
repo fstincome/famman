@@ -52,7 +52,17 @@ export default function Statistics() {
     },
   });
 
-  const isLoading = il || el || bl;
+  const { data: needsRecords, isLoading: nl } = useQuery({
+    queryKey: ['stats-needs'],
+    queryFn: async () => {
+      const { data: cid } = await supabase.rpc('get_user_company_id');
+      if (!cid) return [];
+      const { data } = await supabase.from('family_needs').select('*').eq('company_id', cid);
+      return data || [];
+    },
+  });
+
+  const isLoading = il || el || bl || nl;
 
   // Period filter helper
   const filterByPeriod = <T extends { date: string }>(records: T[]): T[] => {
