@@ -257,16 +257,16 @@ export default function Statistics() {
       {/* Summary badges */}
       <div className="flex flex-wrap gap-3">
         <Badge variant="outline" className="text-base px-4 py-2 text-green-600 border-green-200">
-          Entrées: {formatBIF(totalIncome)}
+          {t.statistics.income}: {formatBIF(totalIncome)}
         </Badge>
         <Badge variant="outline" className="text-base px-4 py-2 text-red-600 border-red-200">
-          Sorties: {formatBIF(totalExpenses)}
+          {t.statistics.expenses}: {formatBIF(totalExpenses)}
         </Badge>
         <Badge variant="outline" className="text-base px-4 py-2 text-blue-600 border-blue-200">
-          Solde: {formatBIF(totalIncome - totalExpenses)}
+          {t.statistics.balance}: {formatBIF(totalIncome - totalExpenses)}
         </Badge>
         <Badge variant="outline" className="text-base px-4 py-2 text-amber-600 border-amber-200">
-          Besoins en attente: {formatBIF(totalNeedsPending)}
+          {t.statistics.pendingNeeds}: {formatBIF(totalNeedsPending)}
         </Badge>
       </div>
 
