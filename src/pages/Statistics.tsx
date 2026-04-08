@@ -7,9 +7,10 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { BarChart3, PieChart as PieChartIcon, TrendingUp, Calendar } from "lucide-react";
+import { BarChart3, PieChart as PieChartIcon, TrendingUp, Calendar, ClipboardList } from "lucide-react";
 
 const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6', '#e11d48', '#84cc16'];
+const PRIORITY_COLORS: Record<string, string> = { urgent: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#10b981' };
 
 const formatBIF = (amount: number) => `${Math.round(amount).toLocaleString('fr-FR')} BIF`;
 
@@ -51,7 +52,17 @@ export default function Statistics() {
     },
   });
 
-  const isLoading = il || el || bl;
+  const { data: needsRecords, isLoading: nl } = useQuery({
+    queryKey: ['stats-needs'],
+    queryFn: async () => {
+      const { data: cid } = await supabase.rpc('get_user_company_id');
+      if (!cid) return [];
+      const { data } = await supabase.from('family_needs').select('*').eq('company_id', cid);
+      return data || [];
+    },
+  });
+
+  const isLoading = il || el || bl || nl;
 
   // Period filter helper
   const filterByPeriod = <T extends { date: string }>(records: T[]): T[] => {
@@ -148,6 +159,29 @@ export default function Statistics() {
     })).filter(e => e.allocated > 0);
   }, [envelopes]);
 
+  // 6. Needs by priority (Pie)
+  const needsByPriority = useMemo(() => {
+    const map: Record<string, number> = {};
+    (needsRecords || []).forEach(r => {
+      const p = r.priority || 'medium';
+      map[p] = (map[p] || 0) + Number(r.estimated_price);
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: PRIORITY_COLORS[name] || '#6366f1' }));
+  }, [needsRecords]);
+
+  // 7. Needs by status (Pie)
+  const needsByStatus = useMemo(() => {
+    const map: Record<string, number> = {};
+    (needsRecords || []).forEach(r => {
+      const s = r.status || 'pending';
+      map[s] = (map[s] || 0) + Number(r.estimated_price);
+    });
+    const statusColors: Record<string, string> = { pending: '#f59e0b', validated: '#10b981', cancelled: '#94a3b8' };
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: statusColors[name] || '#6366f1' }));
+  }, [needsRecords]);
+
+  const totalNeedsPending = (needsRecords || []).filter(r => r.status === 'pending').reduce((s, r) => s + Number(r.estimated_price), 0);
+
   const totalIncome = filteredIncome.reduce((s, r) => s + Number(r.amount), 0);
   const totalExpenses = filteredExpenses.reduce((s, r) => s + Number(r.amount), 0);
 
@@ -230,6 +264,9 @@ export default function Statistics() {
         </Badge>
         <Badge variant="outline" className="text-base px-4 py-2 text-blue-600 border-blue-200">
           Solde: {formatBIF(totalIncome - totalExpenses)}
+        </Badge>
+        <Badge variant="outline" className="text-base px-4 py-2 text-amber-600 border-amber-200">
+          Besoins en attente: {formatBIF(totalNeedsPending)}
         </Badge>
       </div>
 
@@ -360,6 +397,70 @@ export default function Statistics() {
           </ResponsiveContainer>
         )}
       </Card>
+
+      {/* Needs Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Needs by Priority */}
+        <Card className="p-5">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <ClipboardList className="w-5 h-5" />
+            Besoins par priorité
+          </h3>
+          {needsByPriority.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={needsByPriority}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
+                >
+                  {needsByPriority.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatBIF(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        {/* Needs by Status */}
+        <Card className="p-5">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <ClipboardList className="w-5 h-5" />
+            Besoins par statut
+          </h3>
+          {needsByStatus.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={needsByStatus}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
+                >
+                  {needsByStatus.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatBIF(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
