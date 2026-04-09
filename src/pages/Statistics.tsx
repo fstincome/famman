@@ -7,7 +7,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { BarChart3, PieChart as PieChartIcon, TrendingUp, Calendar, ClipboardList } from "lucide-react";
+import { BarChart3, PieChart as PieChartIcon, TrendingUp, Calendar, ClipboardList, Heart } from "lucide-react";
 
 const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6', '#e11d48', '#84cc16'];
 const PRIORITY_COLORS: Record<string, string> = { urgent: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#10b981' };
@@ -62,7 +62,17 @@ export default function Statistics() {
     },
   });
 
-  const isLoading = il || el || bl || nl;
+  const { data: healthRecords, isLoading: hl } = useQuery({
+    queryKey: ['stats-health'],
+    queryFn: async () => {
+      const { data: cid } = await supabase.rpc('get_user_company_id');
+      if (!cid) return [];
+      const { data } = await supabase.from('family_health').select('*').eq('company_id', cid);
+      return data || [];
+    },
+  });
+
+  const isLoading = il || el || bl || nl || hl;
 
   // Period filter helper
   const filterByPeriod = <T extends { date: string }>(records: T[]): T[] => {
@@ -181,6 +191,28 @@ export default function Statistics() {
   }, [needsRecords]);
 
   const totalNeedsPending = (needsRecords || []).filter(r => r.status === 'pending').reduce((s, r) => s + Number(r.estimated_price), 0);
+  const totalHealthCost = (healthRecords || []).reduce((s, r) => s + Number(r.amount), 0);
+
+  // Health by type (Pie)
+  const healthByType = useMemo(() => {
+    const map: Record<string, number> = {};
+    (healthRecords || []).forEach(r => {
+      const t = r.health_type || 'other';
+      map[t] = (map[t] || 0) + Number(r.amount);
+    });
+    const typeColors: Record<string, string> = { medication: '#3b82f6', illness: '#ef4444', consultation: '#f59e0b', other: '#94a3b8' };
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: typeColors[name] || '#6366f1' }));
+  }, [healthRecords]);
+
+  // Health by priority (Pie)
+  const healthByPriority = useMemo(() => {
+    const map: Record<string, number> = {};
+    (healthRecords || []).forEach(r => {
+      const p = r.priority || 'medium';
+      map[p] = (map[p] || 0) + Number(r.amount);
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: PRIORITY_COLORS[name] || '#6366f1' }));
+  }, [healthRecords]);
 
   const totalIncome = filteredIncome.reduce((s, r) => s + Number(r.amount), 0);
   const totalExpenses = filteredExpenses.reduce((s, r) => s + Number(r.amount), 0);
