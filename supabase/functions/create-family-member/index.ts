@@ -15,7 +15,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verify the caller is authenticated and is an admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
@@ -27,7 +26,6 @@ Deno.serve(async (req) => {
     const { data: { user: caller } } = await callerClient.auth.getUser();
     if (!caller) throw new Error("Unauthorized");
 
-    // Check if caller is admin via the has_role function
     const { data: isAdmin } = await callerClient.rpc("has_role", {
       _user_id: caller.id,
       _role: "admin",
@@ -35,7 +33,6 @@ Deno.serve(async (req) => {
 
     if (!isAdmin) throw new Error("Only admins can create users");
 
-    // Get caller's company_id
     const { data: callerProfile } = await callerClient
       .from("profiles")
       .select("company_id")
@@ -44,11 +41,10 @@ Deno.serve(async (req) => {
 
     if (!callerProfile?.company_id) throw new Error("No company found");
 
-    const { email, password, firstName, lastName, role } = await req.json();
+    const { email, password, firstName, lastName, role, familyRole } = await req.json();
 
     if (!email || !password) throw new Error("Email and password are required");
 
-    // Create the user with admin client
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -58,7 +54,6 @@ Deno.serve(async (req) => {
 
     if (createError) throw createError;
 
-    // Update the profile to link to the same company
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .update({
@@ -67,12 +62,12 @@ Deno.serve(async (req) => {
         last_name: lastName,
         email,
         role: role || "viewer",
+        family_role: familyRole || "member",
       })
       .eq("user_id", newUser.user.id);
 
     if (profileError) throw profileError;
 
-    // Add user role
     const { error: roleError } = await supabaseAdmin
       .from("user_roles")
       .insert({
