@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,14 +14,22 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Users, Shield } from "lucide-react";
 import { format } from "date-fns";
 
+const FAMILY_ROLES = [
+  "father", "mother", "son", "daughter", "brother", "sister",
+  "uncle", "aunt", "grandfather", "grandmother", "cousin", "other",
+] as const;
+
 export default function Admin() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", firstName: "", lastName: "", role: "viewer" as "admin" | "viewer" });
+  const [form, setForm] = useState({
+    email: "", password: "", firstName: "", lastName: "",
+    role: "viewer" as "admin" | "viewer",
+    familyRole: "son" as string,
+  });
 
-  // Get current user's company members
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["family-members"],
     queryFn: async () => {
@@ -34,7 +43,6 @@ export default function Admin() {
     },
   });
 
-  // Check if current user is admin
   const { data: isAdmin } = useQuery({
     queryKey: ["is-admin"],
     queryFn: async () => {
@@ -47,7 +55,6 @@ export default function Admin() {
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof form) => {
-      // Call an edge function to create user (since we can't create users from client)
       const { data, error } = await supabase.functions.invoke("create-family-member", {
         body: {
           email: userData.email,
@@ -55,6 +62,7 @@ export default function Admin() {
           firstName: userData.firstName,
           lastName: userData.lastName,
           role: userData.role,
+          familyRole: userData.familyRole,
         },
       });
       if (error) throw error;
@@ -64,13 +72,22 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-members"] });
       setOpen(false);
-      setForm({ email: "", password: "", firstName: "", lastName: "", role: "viewer" });
+      setForm({ email: "", password: "", firstName: "", lastName: "", role: "viewer", familyRole: "son" });
       toast({ title: t.admin.createUser, description: "✓" });
     },
     onError: (error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  const familyRoleLabels: Record<string, string> = {
+    father: t.admin.father, mother: t.admin.mother,
+    son: t.admin.son, daughter: t.admin.daughter,
+    brother: t.admin.brother, sister: t.admin.sister,
+    uncle: t.admin.uncle, aunt: t.admin.aunt,
+    grandfather: t.admin.grandfather, grandmother: t.admin.grandmother,
+    cousin: t.admin.cousin, other: t.admin.otherMember, member: t.admin.memberRole,
+  };
 
   const roleLabels: Record<string, string> = {
     admin: t.admin.adminRole,
@@ -93,20 +110,32 @@ export default function Admin() {
             <DialogContent>
               <DialogHeader><DialogTitle>{t.admin.createUser}</DialogTitle></DialogHeader>
               <div className="space-y-4">
-                <Input placeholder={t.auth.email} type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-                <Input placeholder={t.auth.password} type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
-                  <Input placeholder={t.auth.firstName} value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
-                  <Input placeholder={t.auth.lastName} value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
+                  <div><Label>{t.auth.firstName}</Label><Input value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} /></div>
+                  <div><Label>{t.auth.lastName}</Label><Input value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} /></div>
                 </div>
-                <Select value={form.role} onValueChange={v => setForm({ ...form, role: v as "admin" | "viewer" })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">{t.admin.adminRole}</SelectItem>
-                    <SelectItem value="viewer">{t.admin.viewerRole}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button className="w-full" onClick={() => createUserMutation.mutate(form)} disabled={!form.email || !form.password || createUserMutation.isPending}>
+                <div><Label>{t.admin.familyRole}</Label>
+                  <Select value={form.familyRole} onValueChange={v => setForm({ ...form, familyRole: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {FAMILY_ROLES.map(r => (
+                        <SelectItem key={r} value={r}>{familyRoleLabels[r] || r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>{t.auth.email}</Label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
+                <div><Label>{t.auth.password}</Label><Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} /></div>
+                <div><Label>{t.admin.permission}</Label>
+                  <Select value={form.role} onValueChange={v => setForm({ ...form, role: v as "admin" | "viewer" })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">{t.admin.adminRole}</SelectItem>
+                      <SelectItem value="viewer">{t.admin.viewerRole}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button className="w-full" onClick={() => createUserMutation.mutate(form)} disabled={!form.email || !form.password || !form.firstName || createUserMutation.isPending}>
                   {t.common.create}
                 </Button>
               </div>
@@ -132,19 +161,25 @@ export default function Admin() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t.common.name}</TableHead>
+                <TableHead>{t.admin.familyRole}</TableHead>
                 <TableHead>{t.auth.email}</TableHead>
-                <TableHead>{t.admin.role}</TableHead>
+                <TableHead>{t.admin.permission}</TableHead>
                 <TableHead>{t.admin.accountCreated}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={4} className="text-center py-8">{t.common.loading}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.loading}</TableCell></TableRow>
               ) : members.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
               ) : members.map(member => (
                 <TableRow key={member.id}>
                   <TableCell className="font-medium">{member.first_name} {member.last_name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize">
+                      {familyRoleLabels[member.family_role || "member"] || member.family_role || t.admin.memberRole}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell><Badge variant={member.role === "admin" ? "default" : "secondary"}>{roleLabels[member.role || "user"]}</Badge></TableCell>
                   <TableCell>{format(new Date(member.created_at), "dd/MM/yyyy")}</TableCell>
