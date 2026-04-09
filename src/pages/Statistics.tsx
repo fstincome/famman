@@ -300,6 +300,9 @@ export default function Statistics() {
         <Badge variant="outline" className="text-base px-4 py-2 text-amber-600 border-amber-200">
           {t.statistics.pendingNeeds}: {formatBIF(totalNeedsPending)}
         </Badge>
+        <Badge variant="outline" className="text-base px-4 py-2 text-red-600 border-red-200">
+          {t.health.totalHealth}: {formatBIF(totalHealthCost)}
+        </Badge>
       </div>
 
       {/* Charts Grid */}
@@ -486,6 +489,48 @@ export default function Statistics() {
                   {needsByStatus.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatBIF(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+      </div>
+
+      {/* Health Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-5">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Heart className="w-5 h-5 text-red-500" />
+            {t.health.byType}
+          </h3>
+          {healthByType.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie data={healthByType} cx="50%" cy="50%" outerRadius={100} dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={false}>
+                  {healthByType.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatBIF(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+        <Card className="p-5">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Heart className="w-5 h-5 text-red-500" />
+            {t.health.byPriority}
+          </h3>
+          {healthByPriority.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie data={healthByPriority} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={false}>
+                  {healthByPriority.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
                 </Pie>
                 <Tooltip formatter={(v: number) => formatBIF(v)} />
               </PieChart>
