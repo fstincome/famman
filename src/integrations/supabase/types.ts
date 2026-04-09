@@ -1897,6 +1897,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           email: string | null
+          family_role: string | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -1908,6 +1909,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           email?: string | null
+          family_role?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
@@ -1919,6 +1921,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           email?: string | null
+          family_role?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
