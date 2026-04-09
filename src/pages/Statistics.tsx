@@ -7,7 +7,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { BarChart3, PieChart as PieChartIcon, TrendingUp, Calendar, ClipboardList } from "lucide-react";
+import { BarChart3, PieChart as PieChartIcon, TrendingUp, Calendar, ClipboardList, Heart } from "lucide-react";
 
 const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6', '#e11d48', '#84cc16'];
 const PRIORITY_COLORS: Record<string, string> = { urgent: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#10b981' };
@@ -62,7 +62,17 @@ export default function Statistics() {
     },
   });
 
-  const isLoading = il || el || bl || nl;
+  const { data: healthRecords, isLoading: hl } = useQuery({
+    queryKey: ['stats-health'],
+    queryFn: async () => {
+      const { data: cid } = await supabase.rpc('get_user_company_id');
+      if (!cid) return [];
+      const { data } = await supabase.from('family_health').select('*').eq('company_id', cid);
+      return data || [];
+    },
+  });
+
+  const isLoading = il || el || bl || nl || hl;
 
   // Period filter helper
   const filterByPeriod = <T extends { date: string }>(records: T[]): T[] => {
@@ -181,6 +191,28 @@ export default function Statistics() {
   }, [needsRecords]);
 
   const totalNeedsPending = (needsRecords || []).filter(r => r.status === 'pending').reduce((s, r) => s + Number(r.estimated_price), 0);
+  const totalHealthCost = (healthRecords || []).reduce((s, r) => s + Number(r.amount), 0);
+
+  // Health by type (Pie)
+  const healthByType = useMemo(() => {
+    const map: Record<string, number> = {};
+    (healthRecords || []).forEach(r => {
+      const t = r.health_type || 'other';
+      map[t] = (map[t] || 0) + Number(r.amount);
+    });
+    const typeColors: Record<string, string> = { medication: '#3b82f6', illness: '#ef4444', consultation: '#f59e0b', other: '#94a3b8' };
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: typeColors[name] || '#6366f1' }));
+  }, [healthRecords]);
+
+  // Health by priority (Pie)
+  const healthByPriority = useMemo(() => {
+    const map: Record<string, number> = {};
+    (healthRecords || []).forEach(r => {
+      const p = r.priority || 'medium';
+      map[p] = (map[p] || 0) + Number(r.amount);
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value, color: PRIORITY_COLORS[name] || '#6366f1' }));
+  }, [healthRecords]);
 
   const totalIncome = filteredIncome.reduce((s, r) => s + Number(r.amount), 0);
   const totalExpenses = filteredExpenses.reduce((s, r) => s + Number(r.amount), 0);
@@ -267,6 +299,9 @@ export default function Statistics() {
         </Badge>
         <Badge variant="outline" className="text-base px-4 py-2 text-amber-600 border-amber-200">
           {t.statistics.pendingNeeds}: {formatBIF(totalNeedsPending)}
+        </Badge>
+        <Badge variant="outline" className="text-base px-4 py-2 text-red-600 border-red-200">
+          {t.health.totalHealth}: {formatBIF(totalHealthCost)}
         </Badge>
       </div>
 
@@ -454,6 +489,48 @@ export default function Statistics() {
                   {needsByStatus.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatBIF(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+      </div>
+
+      {/* Health Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="p-5">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Heart className="w-5 h-5 text-red-500" />
+            {t.health.byType}
+          </h3>
+          {healthByType.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie data={healthByType} cx="50%" cy="50%" outerRadius={100} dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={false}>
+                  {healthByType.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatBIF(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+        <Card className="p-5">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Heart className="w-5 h-5 text-red-500" />
+            {t.health.byPriority}
+          </h3>
+          {healthByPriority.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">{t.common.noData}</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie data={healthByPriority} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={false}>
+                  {healthByPriority.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
                 </Pie>
                 <Tooltip formatter={(v: number) => formatBIF(v)} />
               </PieChart>

@@ -1343,6 +1343,65 @@ export type Database = {
           },
         ]
       }
+      family_health: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          currency: string
+          date: string
+          description: string | null
+          health_type: string
+          id: string
+          person_name: string | null
+          pharmacy: string | null
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          company_id: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string | null
+          health_type?: string
+          id?: string
+          person_name?: string | null
+          pharmacy?: string | null
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          currency?: string
+          date?: string
+          description?: string | null
+          health_type?: string
+          id?: string
+          person_name?: string | null
+          pharmacy?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_health_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_needs: {
         Row: {
           company_id: string
