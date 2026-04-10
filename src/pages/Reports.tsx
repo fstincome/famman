@@ -256,8 +256,8 @@ const Reports = () => {
       </div>
 
       {/* Reports */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {reports.map(report => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {reports.map((report: any) => (
           <Card key={report.id} className="flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -271,6 +271,9 @@ const Reports = () => {
               </div>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-between gap-3">
+              {report.hasMonthPicker && (
+                <input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} className="text-sm border rounded px-2 py-1 bg-background" />
+              )}
               <p className="text-sm font-medium text-muted-foreground">{report.stats}</p>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" className="flex-1" onClick={() => handleDownload(report.id, "pdf")}>
