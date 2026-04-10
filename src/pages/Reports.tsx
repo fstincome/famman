@@ -14,7 +14,8 @@ import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 const formatBIF = (n: number) => n.toLocaleString("fr-BI") + " BIF";
 
 const Reports = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const [reportMonth, setReportMonth] = useState(() => format(new Date(), "yyyy-MM"));
 
   const { data: incomes = [] } = useQuery({
     queryKey: ["report-incomes"],
