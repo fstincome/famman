@@ -75,6 +75,7 @@ const Reports = () => {
       const { data } = await supabase.from("family_health").select("*").eq("company_id", profile.company_id);
       return data || [];
     },
+  });
 
   const totalIncome = incomes.reduce((s, r) => s + Number(r.amount), 0);
   const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount), 0);
