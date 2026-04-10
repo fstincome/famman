@@ -57,6 +57,25 @@ const Reports = () => {
     },
   });
 
+  const { data: needs = [] } = useQuery({
+    queryKey: ["report-needs"],
+    queryFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from("family_needs").select("*").eq("company_id", profile.company_id);
+      return data || [];
+    },
+  });
+
+  const { data: healthRecords = [] } = useQuery({
+    queryKey: ["report-health"],
+    queryFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from("family_health").select("*").eq("company_id", profile.company_id);
+      return data || [];
+    },
+
   const totalIncome = incomes.reduce((s, r) => s + Number(r.amount), 0);
   const totalExpenses = expenses.reduce((s, r) => s + Number(r.amount), 0);
   const totalBudget = envelopes.reduce((s, e) => s + Number(e.allocated_amount), 0);
