@@ -5,14 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileText, Download, TrendingUp, TrendingDown, Wallet, CalendarDays } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { exportToCSV, exportToExcel, exportToPDF } from "@/lib/exportUtils";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
 const formatBIF = (n: number) => n.toLocaleString("fr-BI") + " BIF";
 
 const Reports = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const [reportMonth, setReportMonth] = useState(() => format(new Date(), "yyyy-MM"));
 
   const { data: incomes = [] } = useQuery({
     queryKey: ["report-incomes"],
@@ -50,6 +53,26 @@ const Reports = () => {
       const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
       if (!profile?.company_id) return [];
       const { data } = await supabase.from("family_debts").select("*").eq("company_id", profile.company_id);
+      return data || [];
+    },
+  });
+
+  const { data: needs = [] } = useQuery({
+    queryKey: ["report-needs"],
+    queryFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from("family_needs").select("*").eq("company_id", profile.company_id);
+      return data || [];
+    },
+  });
+
+  const { data: healthRecords = [] } = useQuery({
+    queryKey: ["report-health"],
+    queryFn: async () => {
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from("family_health").select("*").eq("company_id", profile.company_id);
       return data || [];
     },
   });
@@ -117,11 +140,60 @@ const Reports = () => {
     else exportToPDF("Rapport Dettes & Créances", ["Nom", "Type", "Contrepartie", "Montant initial", "Reste à payer", "Statut"], rows.map(r => [r.Nom, r.Type, r.Contrepartie, r["Montant initial"], r["Reste à payer"], r.Statut]), filename);
   };
 
+  const generateMonthlyReport = (fmt: "csv" | "excel" | "pdf") => {
+    const [year, month] = reportMonth.split("-").map(Number);
+    const mStart = startOfMonth(new Date(year, month - 1));
+    const mEnd = endOfMonth(mStart);
+    const mStartStr = format(mStart, "yyyy-MM-dd");
+    const mEndStr = format(mEnd, "yyyy-MM-dd");
+    const monthLabel = format(mStart, "MMMM yyyy");
+
+    const monthIncomes = incomes.filter(i => i.date >= mStartStr && i.date <= mEndStr);
+    const monthExpenses = expenses.filter(e => e.date >= mStartStr && e.date <= mEndStr);
+    const monthHealth = healthRecords.filter(h => h.date >= mStartStr && h.date <= mEndStr);
+    const satisfiedNeeds = needs.filter(n => n.status === "validated");
+    const pendingNeeds = needs.filter(n => n.status === "pending");
+
+    const mIncome = monthIncomes.reduce((s, r) => s + Number(r.amount), 0);
+    const mExpense = monthExpenses.reduce((s, r) => s + Number(r.amount), 0);
+    const mHealth = monthHealth.reduce((s, r) => s + Number(r.amount), 0);
+    const mDebtBalance = debts.filter(d => d.debt_type === "debt").reduce((s, d) => s + Number(d.remaining_balance), 0);
+
+    const rows = [
+      { Section: `RAPPORT MENSUEL — ${monthLabel.toUpperCase()}`, Détail: "" },
+      { Section: "", Détail: "" },
+      { Section: "💰 REVENUS", Détail: formatBIF(mIncome) },
+      ...monthIncomes.map(i => ({ Section: `  ${i.source || "Revenu"} (${i.date})`, Détail: formatBIF(Number(i.amount)) })),
+      { Section: "", Détail: "" },
+      { Section: "💸 DÉPENSES", Détail: formatBIF(mExpense) },
+      ...monthExpenses.slice(0, 30).map(e => ({ Section: `  ${e.category} - ${e.subcategory} (${e.date})`, Détail: formatBIF(Number(e.amount)) })),
+      { Section: "", Détail: "" },
+      { Section: "📊 SOLDE NET", Détail: formatBIF(mIncome - mExpense) },
+      { Section: "", Détail: "" },
+      { Section: "✅ BESOINS SATISFAITS", Détail: `${satisfiedNeeds.length}` },
+      ...satisfiedNeeds.map(n => ({ Section: `  ${n.title}`, Détail: formatBIF(Number(n.estimated_price)) })),
+      { Section: "⏳ BESOINS EN ATTENTE", Détail: `${pendingNeeds.length}` },
+      ...pendingNeeds.map(n => ({ Section: `  ${n.title} (${n.priority})`, Détail: formatBIF(Number(n.estimated_price)) })),
+      { Section: "", Détail: "" },
+      { Section: "💳 DETTES RESTANTES", Détail: formatBIF(mDebtBalance) },
+      ...debts.filter(d => d.debt_type === "debt" && d.status !== "paid").map(d => ({ Section: `  ${d.name} → ${d.counterparty}`, Détail: formatBIF(Number(d.remaining_balance)) })),
+      { Section: "", Détail: "" },
+      { Section: "🏥 DÉPENSES SANTÉ", Détail: formatBIF(mHealth) },
+      ...monthHealth.map(h => ({ Section: `  ${h.title} (${h.person_name || ""})`, Détail: formatBIF(Number(h.amount)) })),
+    ];
+
+    const filename = `Rapport_Mensuel_${reportMonth}`;
+    if (fmt === "csv") exportToCSV(rows, filename);
+    else if (fmt === "excel") exportToExcel(rows, filename, "Rapport Mensuel");
+    else exportToPDF(`Rapport Mensuel — ${monthLabel}`, ["Section", "Détail"], rows.map(r => [r.Section, r.Détail]), filename);
+  };
+
   const handleDownload = (reportId: string, fmt: "csv" | "excel" | "pdf") => {
     try {
       if (reportId === "income-expense") generateIncomeExpenseReport(fmt);
       else if (reportId === "budget") generateBudgetReport(fmt);
       else if (reportId === "debt") generateDebtReport(fmt);
+      else if (reportId === "monthly") generateMonthlyReport(fmt);
       toast({ title: "✓", description: "Rapport téléchargé avec succès" });
     } catch {
       toast({ title: "Erreur", description: "Échec du téléchargement", variant: "destructive" });
@@ -150,6 +222,14 @@ const Reports = () => {
       icon: TrendingDown,
       stats: `${formatBIF(totalDebtBalance)} dettes · ${formatBIF(totalCreditBalance)} créances`,
     },
+    {
+      id: "monthly",
+      name: t.monthlyReport.title,
+      description: language === "fr" ? "Synthèse mensuelle complète : revenus, dépenses, besoins, dettes, santé" : "Full monthly summary: income, expenses, needs, debts, health",
+      icon: CalendarDays,
+      stats: `${t.monthlyReport.month}: ${reportMonth}`,
+      hasMonthPicker: true,
+    },
   ];
 
   return (
@@ -176,8 +256,8 @@ const Reports = () => {
       </div>
 
       {/* Reports */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {reports.map(report => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {reports.map((report: any) => (
           <Card key={report.id} className="flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -191,6 +271,9 @@ const Reports = () => {
               </div>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-between gap-3">
+              {report.hasMonthPicker && (
+                <input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)} className="text-sm border rounded px-2 py-1 bg-background" />
+              )}
               <p className="text-sm font-medium text-muted-foreground">{report.stats}</p>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" className="flex-1" onClick={() => handleDownload(report.id, "pdf")}>

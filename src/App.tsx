@@ -25,6 +25,7 @@ import Contacts from "./pages/Contacts";
 import BankAccounts from "./pages/BankAccounts";
 import Needs from "./pages/Needs";
 import Health from "./pages/Health";
+import FamilyCalendar from "./pages/FamilyCalendar";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/bank-accounts" element={<DashboardLayout><BankAccounts /></DashboardLayout>} />
               <Route path="/needs" element={<DashboardLayout><Needs /></DashboardLayout>} />
               <Route path="/health" element={<DashboardLayout><Health /></DashboardLayout>} />
+              <Route path="/calendar" element={<DashboardLayout><FamilyCalendar /></DashboardLayout>} />
               <Route path="/reports" element={<DashboardLayout><Reports /></DashboardLayout>} />
               <Route path="/admin" element={<DashboardLayout><Admin /></DashboardLayout>} />
               <Route path="/profitability" element={<DashboardLayout><Profitability /></DashboardLayout>} />
