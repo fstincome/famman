@@ -132,6 +132,16 @@ export default function Overview() {
     enabled: !!companyId,
   });
 
+  const { data: debts = [], isLoading: l8 } = useQuery({
+    queryKey: ['dashboard-debts', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from('family_debts').select('*').eq('company_id', companyId).neq('status', 'paid');
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   const { data: activityLog = [], isLoading: l9 } = useQuery({
     queryKey: ['dashboard-activity', companyId],
     queryFn: async () => {
