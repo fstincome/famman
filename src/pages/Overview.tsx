@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, ShieldCheck, Users, Download, Trash2, CalendarDays, ClipboardList, Heart, CreditCard, Landmark, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, ShieldCheck, Users, Download, Trash2, CalendarDays, ClipboardList, Heart, CreditCard, Landmark, AlertTriangle, Activity } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,8 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { generateBackupSQL, purgeCompanyData, downloadSQL } from "@/lib/backupUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { useNotifications } from "@/hooks/useNotifications";
-import { format, differenceInDays, isAfter, isBefore, startOfMonth, endOfMonth } from "date-fns";
+import { logAndNotify } from "@/hooks/useActivityLogger";
+import { format, differenceInDays, isAfter, isBefore, startOfMonth, endOfMonth, formatDistanceToNow } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 
 const formatBIF = (amount: number) => {
@@ -22,7 +22,6 @@ export default function Overview() {
   const queryClient = useQueryClient();
   const { t, language } = useLanguage();
   const locale = language === "fr" ? fr : enUS;
-  const { addNotification } = useNotifications();
   const [backingUp, setBackingUp] = useState(false);
   const [purging, setPurging] = useState(false);
   const [notificationsGenerated, setNotificationsGenerated] = useState(false);
