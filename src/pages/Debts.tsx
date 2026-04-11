@@ -217,7 +217,7 @@ export default function Debts() {
               <Button
                 className="w-full"
                 disabled={!payAmount || parseFloat(payAmount) <= 0 || parseFloat(payAmount) > Number(payTarget.remaining_balance) || payMutation.isPending}
-                onClick={() => payMutation.mutate({ id: payTarget.id, amount: parseFloat(payAmount), currentBalance: Number(payTarget.remaining_balance) })}
+                onClick={() => payMutation.mutate({ id: payTarget.id, amount: parseFloat(payAmount), currentBalance: Number(payTarget.remaining_balance), name: payTarget.name })}
               >
                 Confirmer le paiement
               </Button>

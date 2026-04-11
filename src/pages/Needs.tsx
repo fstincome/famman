@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, CheckCircle2, Clock, AlertTriangle, ShoppingCart, Trash2, Edit } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { logAndNotify } from "@/hooks/useActivityLogger";
 
 const priorityConfig = {
   urgent: { label: "Urgent", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200", icon: AlertTriangle },
@@ -100,6 +101,11 @@ export default function Needs() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family_needs"] });
+      const action = editingNeed ? "update" : "create";
+      logAndNotify(
+        { action, entity_type: "need", entity_name: form.title, details: { price: form.estimated_price, priority: form.priority } },
+        { title: action === "create" ? "📋 Besoin ajouté" : "✏️ Besoin modifié", message: `${form.title} — ${form.estimated_price.toLocaleString()} BIF`, type: "info" }
+      );
       setDialogOpen(false);
       setEditingNeed(null);
       setForm(defaultForm);
@@ -113,8 +119,13 @@ export default function Needs() {
       const { error } = await supabase.from("family_needs" as any).delete().eq("id", id as any);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      const item = needs.find(n => n.id === id);
       queryClient.invalidateQueries({ queryKey: ["family_needs"] });
+      logAndNotify(
+        { action: "delete", entity_type: "need", entity_id: id, entity_name: item?.title },
+        { title: "🗑️ Besoin supprimé", message: item?.title || "Supprimé", type: "warning" }
+      );
       toast({ title: "Besoin supprimé" });
     },
   });
@@ -128,8 +139,13 @@ export default function Needs() {
       } as any).eq("id", id as any);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      const item = needs.find(n => n.id === id);
       queryClient.invalidateQueries({ queryKey: ["family_needs"] });
+      logAndNotify(
+        { action: "validate", entity_type: "need", entity_id: id, entity_name: item?.title },
+        { title: "✅ Besoin validé", message: item?.title || "Validé", type: "success" }
+      );
       toast({ title: "Besoin validé ✓" });
     },
   });
