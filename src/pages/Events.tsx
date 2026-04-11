@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Calendar, MapPin, Trash2 } from "lucide-react";
 import { format, isPast, isToday, isFuture } from "date-fns";
+import { logAndNotify } from "@/hooks/useActivityLogger";
 
 const EVENT_TYPES = ["birthday", "holiday", "celebration", "appointment", "reminder", "other"] as const;
 
@@ -50,6 +51,10 @@ export default function Events() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-events"] });
+      logAndNotify(
+        { action: "create", entity_type: "event", entity_name: form.title, details: { type: form.event_type, date: form.start_date } },
+        { title: "📅 Événement ajouté", message: `${form.title} — ${form.start_date}`, type: "success" }
+      );
       setOpen(false);
       setForm({ title: "", event_type: "other", description: "", start_date: "", end_date: "", location: "", budget: "" });
       toast({ title: t.common.save, description: "✓" });
@@ -58,10 +63,18 @@ export default function Events() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const item = events.find(e => e.id === id);
       const { error } = await supabase.from("family_events").delete().eq("id", id);
       if (error) throw error;
+      return item;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["family-events"] }),
+    onSuccess: (item) => {
+      queryClient.invalidateQueries({ queryKey: ["family-events"] });
+      logAndNotify(
+        { action: "delete", entity_type: "event", entity_id: item?.id, entity_name: item?.title },
+        { title: "🗑️ Événement supprimé", message: item?.title || "Supprimé", type: "warning" }
+      );
+    },
   });
 
   const eventTypeLabels: Record<string, string> = {
