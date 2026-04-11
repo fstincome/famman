@@ -132,76 +132,63 @@ export default function Overview() {
     enabled: !!companyId,
   });
 
-  const { data: debts = [], isLoading: l8 } = useQuery({
-    queryKey: ['dashboard-debts', companyId],
+  const { data: activityLog = [], isLoading: l9 } = useQuery({
+    queryKey: ['dashboard-activity', companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase.from('family_debts').select('*').eq('company_id', companyId).neq('status', 'paid');
-      return data || [];
+      const { data } = await supabase.from('activity_log').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(10);
+      return (data || []) as any[];
     },
     enabled: !!companyId,
   });
 
   const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8;
 
-  // Smart notifications
+  // Smart notifications (persist to DB once per session)
   useEffect(() => {
-    if (isLoading || notificationsGenerated) return;
+    if (isLoading || notificationsGenerated || !companyId) return;
     setNotificationsGenerated(true);
     const today = new Date();
 
-    // Debts approaching due date (within 7 days)
+    const notifications: Array<{ activity: { action: string; entity_type: string; entity_name?: string }; notif: { title: string; message: string; type: "warning" | "error" | "info" | "success" } }> = [];
+
     debts.forEach(d => {
       if (d.due_date) {
         const daysLeft = differenceInDays(new Date(d.due_date), today);
         if (daysLeft >= 0 && daysLeft <= 7) {
-          addNotification({
-            title: language === "fr" ? "⏰ Échéance dette proche" : "⏰ Debt due soon",
-            message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} ${language === "fr" ? "dans" : "in"} ${daysLeft} ${language === "fr" ? "jours" : "days"}`,
-            type: "warning",
+          notifications.push({
+            activity: { action: "alert", entity_type: "debt", entity_name: d.name },
+            notif: { title: "⏰ Échéance dette proche", message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} dans ${daysLeft} jours`, type: "warning" },
           });
         }
         if (daysLeft < 0) {
-          addNotification({
-            title: language === "fr" ? "🚨 Dette en retard" : "🚨 Overdue debt",
-            message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} (${Math.abs(daysLeft)} ${language === "fr" ? "jours de retard" : "days overdue"})`,
-            type: "error",
+          notifications.push({
+            activity: { action: "alert", entity_type: "debt", entity_name: d.name },
+            notif: { title: "🚨 Dette en retard", message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} (${Math.abs(daysLeft)} jours de retard)`, type: "error" },
           });
         }
       }
     });
 
-    // Needs validated but not purchased
     needs.filter(n => n.status === "validated").forEach(n => {
-      addNotification({
-        title: language === "fr" ? "✅ Besoin validé à acheter" : "✅ Validated need to purchase",
-        message: `${n.title} — ${formatBIF(Number(n.estimated_price))}`,
-        type: "info",
+      notifications.push({
+        activity: { action: "alert", entity_type: "need", entity_name: n.title },
+        notif: { title: "✅ Besoin validé à acheter", message: `${n.title} — ${formatBIF(Number(n.estimated_price))}`, type: "info" },
       });
     });
 
-    // Ongoing health (medication reminders)
-    healthRecords.forEach(h => {
-      if (h.health_type === "medication") {
-        addNotification({
-          title: language === "fr" ? "💊 Médicament en cours" : "💊 Ongoing medication",
-          message: `${h.title}${h.person_name ? ` (${h.person_name})` : ""}`,
-          type: "info",
+    envelopes.forEach(e => {
+      if (Number(e.allocated_amount) > 0 && Number(e.spent_amount) > Number(e.allocated_amount)) {
+        notifications.push({
+          activity: { action: "alert", entity_type: "budget", entity_name: e.subcategory },
+          notif: { title: "⚠️ Budget dépassé", message: `${e.subcategory}: ${formatBIF(Number(e.spent_amount))} / ${formatBIF(Number(e.allocated_amount))}`, type: "error" },
         });
       }
     });
 
-    // Budget exceeded
-    envelopes.forEach(e => {
-      if (Number(e.allocated_amount) > 0 && Number(e.spent_amount) > Number(e.allocated_amount)) {
-        addNotification({
-          title: language === "fr" ? "⚠️ Budget dépassé" : "⚠️ Budget exceeded",
-          message: `${e.subcategory}: ${formatBIF(Number(e.spent_amount))} / ${formatBIF(Number(e.allocated_amount))}`,
-          type: "error",
-        });
-      }
-    });
-  }, [isLoading, notificationsGenerated, debts, needs, healthRecords, envelopes, language, addNotification]);
+    // Fire all in parallel (fire-and-forget)
+    notifications.forEach(n => logAndNotify(n.activity, n.notif));
+  }, [isLoading, notificationsGenerated, debts, needs, envelopes, companyId]);
 
   if (isLoading) {
     return (
