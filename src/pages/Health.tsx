@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, Plus, Pill, Stethoscope, Trash2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { logAndNotify } from "@/hooks/useActivityLogger";
 
 const formatBIF = (amount: number) => `${Math.round(amount).toLocaleString('fr-FR')} BIF`;
 
@@ -47,9 +48,13 @@ export default function Health() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["health-records"] });
       queryClient.invalidateQueries({ queryKey: ["stats-health"] });
+      logAndNotify(
+        { action: "create", entity_type: "health", entity_name: form.title, details: { type: form.health_type, person: form.person_name } },
+        { title: "💊 Santé ajoutée", message: `${form.title}${form.person_name ? ` (${form.person_name})` : ""}`, type: "info" }
+      );
       setOpen(false);
       setForm({ title: "", health_type: "medication", person_name: "", amount: "", priority: "medium", pharmacy: "", description: "", date: new Date().toISOString().split("T")[0] });
       toast({ title: t.health.added });
@@ -60,10 +65,16 @@ export default function Health() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("family_health").delete().eq("id", id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      const record = (records || []).find(r => r.id === id);
       queryClient.invalidateQueries({ queryKey: ["health-records"] });
       queryClient.invalidateQueries({ queryKey: ["stats-health"] });
+      logAndNotify(
+        { action: "delete", entity_type: "health", entity_id: id, entity_name: record?.title },
+        { title: "🗑️ Santé supprimée", message: record?.title || "Entrée supprimée", type: "warning" }
+      );
     },
   });
 
@@ -71,10 +82,16 @@ export default function Health() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("family_health").update({ status: "treated" }).eq("id", id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      const record = (records || []).find(r => r.id === id);
       queryClient.invalidateQueries({ queryKey: ["health-records"] });
       queryClient.invalidateQueries({ queryKey: ["stats-health"] });
+      logAndNotify(
+        { action: "update", entity_type: "health", entity_id: id, entity_name: record?.title, details: { status: "treated" } },
+        { title: "✅ Traitement terminé", message: record?.title || "Traitement marqué comme terminé", type: "success" }
+      );
     },
   });
 

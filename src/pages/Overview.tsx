@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, ShieldCheck, Users, Download, Trash2, CalendarDays, ClipboardList, Heart, CreditCard, Landmark, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, ShieldCheck, Users, Download, Trash2, CalendarDays, ClipboardList, Heart, CreditCard, Landmark, AlertTriangle, Activity } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,8 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { generateBackupSQL, purgeCompanyData, downloadSQL } from "@/lib/backupUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { useNotifications } from "@/hooks/useNotifications";
-import { format, differenceInDays, isAfter, isBefore, startOfMonth, endOfMonth } from "date-fns";
+import { logAndNotify } from "@/hooks/useActivityLogger";
+import { format, differenceInDays, isAfter, isBefore, startOfMonth, endOfMonth, formatDistanceToNow } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 
 const formatBIF = (amount: number) => {
@@ -22,7 +22,6 @@ export default function Overview() {
   const queryClient = useQueryClient();
   const { t, language } = useLanguage();
   const locale = language === "fr" ? fr : enUS;
-  const { addNotification } = useNotifications();
   const [backingUp, setBackingUp] = useState(false);
   const [purging, setPurging] = useState(false);
   const [notificationsGenerated, setNotificationsGenerated] = useState(false);
@@ -143,66 +142,63 @@ export default function Overview() {
     enabled: !!companyId,
   });
 
+  const { data: activityLog = [], isLoading: l9 } = useQuery({
+    queryKey: ['dashboard-activity', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase.from('activity_log').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(10);
+      return (data || []) as any[];
+    },
+    enabled: !!companyId,
+  });
+
   const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8;
 
-  // Smart notifications
+  // Smart notifications (persist to DB once per session)
   useEffect(() => {
-    if (isLoading || notificationsGenerated) return;
+    if (isLoading || notificationsGenerated || !companyId) return;
     setNotificationsGenerated(true);
     const today = new Date();
 
-    // Debts approaching due date (within 7 days)
+    const notifications: Array<{ activity: { action: string; entity_type: string; entity_name?: string }; notif: { title: string; message: string; type: "warning" | "error" | "info" | "success" } }> = [];
+
     debts.forEach(d => {
       if (d.due_date) {
         const daysLeft = differenceInDays(new Date(d.due_date), today);
         if (daysLeft >= 0 && daysLeft <= 7) {
-          addNotification({
-            title: language === "fr" ? "⏰ Échéance dette proche" : "⏰ Debt due soon",
-            message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} ${language === "fr" ? "dans" : "in"} ${daysLeft} ${language === "fr" ? "jours" : "days"}`,
-            type: "warning",
+          notifications.push({
+            activity: { action: "alert", entity_type: "debt", entity_name: d.name },
+            notif: { title: "⏰ Échéance dette proche", message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} dans ${daysLeft} jours`, type: "warning" },
           });
         }
         if (daysLeft < 0) {
-          addNotification({
-            title: language === "fr" ? "🚨 Dette en retard" : "🚨 Overdue debt",
-            message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} (${Math.abs(daysLeft)} ${language === "fr" ? "jours de retard" : "days overdue"})`,
-            type: "error",
+          notifications.push({
+            activity: { action: "alert", entity_type: "debt", entity_name: d.name },
+            notif: { title: "🚨 Dette en retard", message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} (${Math.abs(daysLeft)} jours de retard)`, type: "error" },
           });
         }
       }
     });
 
-    // Needs validated but not purchased
     needs.filter(n => n.status === "validated").forEach(n => {
-      addNotification({
-        title: language === "fr" ? "✅ Besoin validé à acheter" : "✅ Validated need to purchase",
-        message: `${n.title} — ${formatBIF(Number(n.estimated_price))}`,
-        type: "info",
+      notifications.push({
+        activity: { action: "alert", entity_type: "need", entity_name: n.title },
+        notif: { title: "✅ Besoin validé à acheter", message: `${n.title} — ${formatBIF(Number(n.estimated_price))}`, type: "info" },
       });
     });
 
-    // Ongoing health (medication reminders)
-    healthRecords.forEach(h => {
-      if (h.health_type === "medication") {
-        addNotification({
-          title: language === "fr" ? "💊 Médicament en cours" : "💊 Ongoing medication",
-          message: `${h.title}${h.person_name ? ` (${h.person_name})` : ""}`,
-          type: "info",
+    envelopes.forEach(e => {
+      if (Number(e.allocated_amount) > 0 && Number(e.spent_amount) > Number(e.allocated_amount)) {
+        notifications.push({
+          activity: { action: "alert", entity_type: "budget", entity_name: e.subcategory },
+          notif: { title: "⚠️ Budget dépassé", message: `${e.subcategory}: ${formatBIF(Number(e.spent_amount))} / ${formatBIF(Number(e.allocated_amount))}`, type: "error" },
         });
       }
     });
 
-    // Budget exceeded
-    envelopes.forEach(e => {
-      if (Number(e.allocated_amount) > 0 && Number(e.spent_amount) > Number(e.allocated_amount)) {
-        addNotification({
-          title: language === "fr" ? "⚠️ Budget dépassé" : "⚠️ Budget exceeded",
-          message: `${e.subcategory}: ${formatBIF(Number(e.spent_amount))} / ${formatBIF(Number(e.allocated_amount))}`,
-          type: "error",
-        });
-      }
-    });
-  }, [isLoading, notificationsGenerated, debts, needs, healthRecords, envelopes, language, addNotification]);
+    // Fire all in parallel (fire-and-forget)
+    notifications.forEach(n => logAndNotify(n.activity, n.notif));
+  }, [isLoading, notificationsGenerated, debts, needs, envelopes, companyId]);
 
   if (isLoading) {
     return (
@@ -495,6 +491,41 @@ export default function Overview() {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Activity Log */}
+      <Card className="p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold">{language === "fr" ? "Journal d'activité" : "Activity Log"}</h3>
+        </div>
+        {activityLog.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">{language === "fr" ? "Aucune activité enregistrée" : "No activity recorded"}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {activityLog.map((log: any) => {
+              const actionIcons: Record<string, string> = { create: "➕", update: "✏️", delete: "🗑️", validate: "✅", payment: "💸", alert: "🔔" };
+              return (
+                <div key={log.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+                  <span className="text-lg mt-0.5">{actionIcons[log.action] || "📋"}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">
+                      <span className="text-muted-foreground">{log.user_name}</span>{" "}
+                      <span>{log.action === "create" ? (language === "fr" ? "a ajouté" : "added") : log.action === "delete" ? (language === "fr" ? "a supprimé" : "deleted") : log.action === "update" ? (language === "fr" ? "a modifié" : "updated") : log.action === "validate" ? (language === "fr" ? "a validé" : "validated") : log.action === "payment" ? (language === "fr" ? "a payé" : "paid") : log.action}</span>{" "}
+                      <span className="font-semibold">{log.entity_name || log.entity_type}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale })}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs shrink-0">{log.entity_type}</Badge>
+                </div>
+              );
+            })}
           </div>
         )}
       </Card>
