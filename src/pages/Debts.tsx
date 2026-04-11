@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, MinusCircle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
+import { logAndNotify } from "@/hooks/useActivityLogger";
 
 const formatBIF = (n: number) => n.toLocaleString("fr-BI") + " BIF";
 
@@ -57,6 +58,11 @@ export default function Debts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-debts"] });
+      const amount = parseFloat(form.original_amount) || 0;
+      logAndNotify(
+        { action: "create", entity_type: "debt", entity_name: form.name, details: { counterparty: form.counterparty, amount, type: debtType } },
+        { title: debtType === "debt" ? "📋 Dette ajoutée" : "📋 Créance ajoutée", message: `${form.name} — ${amount.toLocaleString()} BIF (${form.counterparty})`, type: "info" }
+      );
       setOpen(false);
       setForm({ name: "", counterparty: "", original_amount: "", due_date: "" });
       toast({ title: "✓", description: t.debts.title });
@@ -64,14 +70,19 @@ export default function Debts() {
   });
 
   const payMutation = useMutation({
-    mutationFn: async ({ id, amount, currentBalance }: { id: string; amount: number; currentBalance: number }) => {
+    mutationFn: async ({ id, amount, currentBalance, name }: { id: string; amount: number; currentBalance: number; name?: string }) => {
       const newBalance = Math.max(0, currentBalance - amount);
       const newStatus = newBalance <= 0 ? "paid" : "unpaid";
       const { error } = await supabase.from("family_debts").update({ remaining_balance: newBalance, status: newStatus }).eq("id", id);
       if (error) throw error;
+      return { newStatus, name, amount };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["family-debts"] });
+      logAndNotify(
+        { action: "payment", entity_type: "debt", entity_name: result.name, details: { amount: result.amount, status: result.newStatus } },
+        { title: result.newStatus === "paid" ? "✅ Dette soldée" : "💸 Paiement effectué", message: `${result.name} — ${result.amount.toLocaleString()} BIF`, type: result.newStatus === "paid" ? "success" : "info" }
+      );
       setPayOpen(false);
       setPayAmount("");
       setPayTarget(null);
@@ -81,10 +92,18 @@ export default function Debts() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const item = debts.find(d => d.id === id);
       const { error } = await supabase.from("family_debts").delete().eq("id", id);
       if (error) throw error;
+      return item;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["family-debts"] }),
+    onSuccess: (item) => {
+      queryClient.invalidateQueries({ queryKey: ["family-debts"] });
+      logAndNotify(
+        { action: "delete", entity_type: "debt", entity_id: item?.id, entity_name: item?.name },
+        { title: "🗑️ Dette supprimée", message: item?.name || "Supprimée", type: "warning" }
+      );
+    },
   });
 
   const debtItems = debts.filter(d => d.debt_type === "debt");

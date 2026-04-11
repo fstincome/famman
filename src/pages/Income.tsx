@@ -13,6 +13,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useIncomeRecords } from "@/hooks/useIncomeRecords";
 import { useBudgetEnvelopes } from "@/hooks/useBudgetEnvelopes";
 import { BUDGET_CATEGORIES, ALL_SUBCATEGORIES } from "@/lib/budgetConfig";
+import { logAndNotify } from "@/hooks/useActivityLogger";
 
 export default function Income() {
   const { t } = useLanguage();
@@ -98,6 +99,10 @@ export default function Income() {
       }
 
       toast.success(`${amount.toLocaleString()} BIF répartis dans les enveloppes budgétaires`);
+      logAndNotify(
+        { action: "create", entity_type: "income", entity_name: formData.source || "Revenu", details: { amount, date: formData.date } },
+        { title: "💰 Revenu enregistré", message: `${amount.toLocaleString()} BIF — ${formData.source || "Revenu"}`, type: "success" }
+      );
       queryClient.invalidateQueries({ queryKey: ["income-records"] });
       invalidateEnvelopes();
       setFormData({ amount: "", source: "", description: "", date: new Date().toISOString().split("T")[0] });

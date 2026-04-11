@@ -7,11 +7,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useNotifications, Notification } from "@/hooks/useNotifications";
+import { usePersistedNotifications, DBNotification } from "@/hooks/usePersistedNotifications";
 import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export function NotificationPopover() {
+  const { language } = useLanguage();
+  const locale = language === "fr" ? fr : undefined;
   const { 
     notifications, 
     unreadCount, 
@@ -19,19 +23,17 @@ export function NotificationPopover() {
     markAllAsRead, 
     clearNotification,
     clearAll 
-  } = useNotifications();
+  } = usePersistedNotifications();
 
-  const unread = unreadCount();
-
-  const getNotificationIcon = (type: Notification['type']) => {
+  const getNotificationIcon = (type: string) => {
     const iconClass = "w-4 h-4";
     switch (type) {
       case 'success':
-        return <Check className={cn(iconClass, "text-success")} />;
+        return <Check className={cn(iconClass, "text-green-500")} />;
       case 'error':
         return <X className={cn(iconClass, "text-destructive")} />;
       case 'warning':
-        return <Bell className={cn(iconClass, "text-warning")} />;
+        return <Bell className={cn(iconClass, "text-orange-500")} />;
       default:
         return <Bell className={cn(iconClass, "text-primary")} />;
     }
@@ -42,12 +44,12 @@ export function NotificationPopover() {
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          {unread > 0 && (
+          {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
               className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
             >
-              {unread > 9 ? '9+' : unread}
+              {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
         </Button>
@@ -56,14 +58,14 @@ export function NotificationPopover() {
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Notifications</h3>
           <div className="flex gap-2">
-            {unread > 0 && (
+            {unreadCount > 0 && (
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={markAllAsRead}
                 className="text-xs"
               >
-                Mark all read
+                {language === "fr" ? "Tout marquer lu" : "Mark all read"}
               </Button>
             )}
             {notifications.length > 0 && (
@@ -73,7 +75,7 @@ export function NotificationPopover() {
                 onClick={clearAll}
                 className="text-xs"
               >
-                Clear all
+                {language === "fr" ? "Tout effacer" : "Clear all"}
               </Button>
             )}
           </div>
@@ -83,7 +85,9 @@ export function NotificationPopover() {
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No notifications</p>
+              <p className="text-sm text-muted-foreground">
+                {language === "fr" ? "Aucune notification" : "No notifications"}
+              </p>
             </div>
           ) : (
             <div className="divide-y">
@@ -121,7 +125,7 @@ export function NotificationPopover() {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(notification.timestamp, { addSuffix: true })}
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale })}
                       </p>
                     </div>
                     {!notification.read && (

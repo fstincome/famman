@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useExpenseRecords } from "@/hooks/useExpenseRecords";
 import { useBudgetEnvelopes } from "@/hooks/useBudgetEnvelopes";
 import { BUDGET_CATEGORIES, getCategoryForSubcategory } from "@/lib/budgetConfig";
+import { logAndNotify } from "@/hooks/useActivityLogger";
 
 export default function Expenses() {
   const queryClient = useQueryClient();
@@ -92,6 +93,10 @@ export default function Expenses() {
       }
 
       toast.success(`${requestedAmount.toLocaleString("fr-FR")} BIF dépensé dans ${selectedSubcategory}`);
+      logAndNotify(
+        { action: "create", entity_type: "expense", entity_name: selectedSubcategory, details: { amount: requestedAmount, category: selectedCategory, subcategory: selectedSubcategory } },
+        { title: "📉 Dépense enregistrée", message: `${requestedAmount.toLocaleString("fr-FR")} BIF — ${selectedSubcategory}`, type: "info" }
+      );
       queryClient.invalidateQueries({ queryKey: ["expense-records"] });
       invalidateEnvelopes();
       setFormData({ amount: "", description: "", date: new Date().toISOString().split("T")[0] });
