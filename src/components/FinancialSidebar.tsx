@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, NavLink } from "react-router-dom";
 import { CSVUploader } from "@/components/CSVUploader";
-import { LayoutDashboard, TrendingUp, Receipt, Building2, Calendar, Rocket, CreditCard, FileText, Upload, Settings, Users, BarChart3, BookUser, Landmark, ClipboardList, Heart, CalendarDays } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Receipt, Building2, Calendar, Rocket, CreditCard, FileText, Upload, Settings, Users, BarChart3, BookUser, Landmark, ClipboardList, Heart, CalendarDays, Repeat } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -28,6 +28,7 @@ export function FinancialSidebar() {
     { title: t.nav.bankAccounts, url: "/bank-accounts", icon: Landmark },
     { title: t.nav.needs, url: "/needs", icon: ClipboardList },
     { title: t.nav.health, url: "/health", icon: Heart },
+    { title: "Récurrences", url: "/recurring", icon: Repeat },
     { title: t.nav.calendar, url: "/calendar", icon: CalendarDays },
     { title: t.nav.reports, url: "/reports", icon: FileText },
   ];

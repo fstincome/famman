@@ -4,6 +4,7 @@ import { FinancialSidebar } from "./FinancialSidebar";
 import { NotificationPopover } from "./NotificationPopover";
 import { SearchResults } from "./SearchResults";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeCustomizer } from "./ThemeCustomizer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, LogOut } from "lucide-react";
@@ -94,6 +95,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeCustomizer />
               <LanguageSwitcher />
               <NotificationPopover />
               <Button variant="outline" onClick={handleSignOut} className="gap-2">
