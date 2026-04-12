@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, Plus, Pill, Stethoscope, Trash2, AlertTriangle } from "lucide-react";
+import { Heart, Plus, Pill, Stethoscope, Trash2, AlertTriangle, Search } from "lucide-react";
+import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { useToast } from "@/hooks/use-toast";
 import { logAndNotify } from "@/hooks/useActivityLogger";
 
@@ -162,45 +163,55 @@ export default function Health() {
       </div>
 
       {/* Records */}
-      <div className="space-y-3">
-        {(records || []).length === 0 ? (
-          <Card className="p-8 text-center text-muted-foreground">{t.common.noData}</Card>
-        ) : (records || []).map(r => {
-          const Icon = typeIcon[r.health_type] || Heart;
-          return (
-            <Card key={r.id} className="p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className={`p-2 rounded-lg ${priorityColor[r.priority] || "bg-muted"}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">{r.title}</span>
-                      <Badge variant="outline" className="text-xs">{typeLabel[r.health_type] || r.health_type}</Badge>
-                      <Badge className={`text-xs ${priorityColor[r.priority]}`}>{priorityLabel[r.priority] || r.priority}</Badge>
-                      {r.status === "treated" && <Badge className="bg-green-100 text-green-700 text-xs">{t.health.treated}</Badge>}
+      <Card>
+        <CardContent className="pt-6">
+          {(records || []).length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">{t.common.noData}</p>
+          ) : (
+            <DataTable
+              data={records || []}
+              columns={[
+                {
+                  key: "title", header: t.health.recordName, render: (r) => {
+                    const Icon = typeIcon[r.health_type] || Heart;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1.5 rounded-lg ${priorityColor[r.priority] || "bg-muted"}`}><Icon className="w-4 h-4" /></div>
+                        <div>
+                          <span className="font-semibold">{r.title}</span>
+                          {r.person_name && <p className="text-xs text-muted-foreground">{r.person_name}</p>}
+                        </div>
+                      </div>
+                    );
+                  },
+                },
+                { key: "health_type", header: t.common.type, render: (r) => <Badge variant="outline" className="text-xs">{typeLabel[r.health_type] || r.health_type}</Badge> },
+                { key: "priority", header: t.health.priority, render: (r) => <Badge className={`text-xs ${priorityColor[r.priority]}`}>{priorityLabel[r.priority] || r.priority}</Badge> },
+                { key: "date", header: t.common.date, render: (r) => r.date, getValue: (r) => r.date },
+                { key: "amount", header: t.common.amount, render: (r) => <span className="font-bold">{formatBIF(Number(r.amount))}</span>, className: "text-right" },
+                {
+                  key: "status", header: t.common.status, render: (r) => r.status === "treated"
+                    ? <Badge className="bg-green-100 text-green-700 text-xs">{t.health.treated}</Badge>
+                    : <Badge variant="secondary" className="text-xs">En cours</Badge>,
+                },
+                {
+                  key: "actions", header: t.common.actions, sortable: false, searchable: false, render: (r) => (
+                    <div className="flex gap-1">
+                      {r.status === "ongoing" && (
+                        <Button size="sm" variant="outline" className="text-green-600" onClick={() => markTreated.mutate(r.id)}>{t.health.markTreated}</Button>
+                      )}
+                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteMutation.mutate(r.id)}><Trash2 className="w-4 h-4" /></Button>
                     </div>
-                    {r.person_name && <p className="text-sm text-muted-foreground">{t.health.person}: {r.person_name}</p>}
-                    {r.pharmacy && <p className="text-sm text-muted-foreground">{t.health.pharmacy}: {r.pharmacy}</p>}
-                    {r.description && <p className="text-sm text-muted-foreground mt-1">{r.description}</p>}
-                    <p className="text-xs text-muted-foreground mt-1">{r.date}</p>
-                  </div>
-                </div>
-                <div className="text-right flex flex-col items-end gap-2">
-                  <span className="font-bold text-lg">{formatBIF(Number(r.amount))}</span>
-                  <div className="flex gap-1">
-                    {r.status === "ongoing" && (
-                      <Button size="sm" variant="outline" className="text-green-600" onClick={() => markTreated.mutate(r.id)}>{t.health.markTreated}</Button>
-                    )}
-                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteMutation.mutate(r.id)}><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+                  ),
+                },
+              ] as DataTableColumn<any>[]}
+              pageSize={5}
+              searchPlaceholder="Rechercher..."
+              emptyMessage={t.common.noData}
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
