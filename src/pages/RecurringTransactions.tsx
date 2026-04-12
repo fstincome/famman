@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, RefreshCw, Trash2, Repeat, Calendar } from "lucide-react";
+import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { logAndNotify } from "@/hooks/useActivityLogger";
@@ -286,64 +287,60 @@ export default function RecurringTransactions() {
               <p>Aucune transaction récurrente</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titre</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Catégorie</TableHead>
-                  <TableHead className="text-right">Montant</TableHead>
-                  <TableHead>Fréquence</TableHead>
-                  <TableHead>Prochaine échéance</TableHead>
-                  <TableHead>Actif</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((tx) => {
-                  const isOverdue = new Date(tx.next_due_date) <= new Date();
-                  return (
-                    <TableRow key={tx.id}>
-                      <TableCell className="font-medium">{tx.title}</TableCell>
-                      <TableCell>
-                        <Badge variant={tx.transaction_type === "income" ? "default" : "secondary"}>
-                          {tx.transaction_type === "income" ? "Revenu" : "Dépense"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{tx.category}</TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {tx.amount.toLocaleString()} {tx.currency}
-                      </TableCell>
-                      <TableCell>{frequencies.find((f) => f.value === tx.frequency)?.label}</TableCell>
-                      <TableCell>
+            <DataTable
+              data={transactions}
+              columns={[
+                { key: "title", header: "Titre", render: (tx) => <span className="font-medium">{tx.title}</span> },
+                {
+                  key: "transaction_type", header: "Type", render: (tx) => (
+                    <Badge variant={tx.transaction_type === "income" ? "default" : "secondary"}>
+                      {tx.transaction_type === "income" ? "Revenu" : "Dépense"}
+                    </Badge>
+                  ),
+                },
+                { key: "category", header: "Catégorie" },
+                { key: "amount", header: "Montant", render: (tx) => <span className="font-semibold">{tx.amount.toLocaleString()} {tx.currency}</span>, className: "text-right" },
+                { key: "frequency", header: "Fréquence", render: (tx) => frequencies.find((f) => f.value === tx.frequency)?.label || tx.frequency },
+                {
+                  key: "next_due_date", header: "Prochaine échéance", render: (tx) => {
+                    const isOverdue = new Date(tx.next_due_date) <= new Date();
+                    return (
+                      <>
                         <span className={isOverdue ? "text-destructive font-medium" : ""}>
                           {format(new Date(tx.next_due_date), "dd MMM yyyy", { locale: fr })}
                         </span>
                         {isOverdue && <Badge variant="destructive" className="ml-2 text-xs">Échue</Badge>}
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={tx.is_active}
-                          onCheckedChange={(v) => toggleMutation.mutate({ id: tx.id, is_active: v })}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {isOverdue && tx.is_active && (
-                            <Button variant="outline" size="sm" onClick={() => generateMutation.mutate(tx)}>
-                              <RefreshCw className="w-3 h-3" />
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(tx.id)}>
-                            <Trash2 className="w-3 h-3 text-destructive" />
+                      </>
+                    );
+                  },
+                },
+                {
+                  key: "is_active", header: "Actif", sortable: false, render: (tx) => (
+                    <Switch checked={tx.is_active} onCheckedChange={(v) => toggleMutation.mutate({ id: tx.id, is_active: v })} />
+                  ),
+                },
+                {
+                  key: "actions", header: "Actions", sortable: false, searchable: false, render: (tx) => {
+                    const isOverdue = new Date(tx.next_due_date) <= new Date();
+                    return (
+                      <div className="flex gap-1">
+                        {isOverdue && tx.is_active && (
+                          <Button variant="outline" size="sm" onClick={() => generateMutation.mutate(tx)}>
+                            <RefreshCw className="w-3 h-3" />
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(tx.id)}>
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </div>
+                    );
+                  },
+                },
+              ] as DataTableColumn<RecurringTransaction>[]}
+              pageSize={5}
+              searchPlaceholder="Rechercher une récurrence..."
+              emptyMessage="Aucune transaction récurrente"
+            />
           )}
         </CardContent>
       </Card>
