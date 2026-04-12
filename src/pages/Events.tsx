@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Calendar, MapPin, Trash2 } from "lucide-react";
+import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { format, isPast, isToday, isFuture } from "date-fns";
 import { logAndNotify } from "@/hooks/useActivityLogger";
 
@@ -133,37 +134,45 @@ export default function Events() {
       </div>
 
       {/* Events list */}
-      <div className="space-y-3">
-        {isLoading ? (
-          <Card><CardContent className="py-8 text-center">{t.common.loading}</CardContent></Card>
-        ) : events.length === 0 ? (
-          <Card><CardContent className="py-8 text-center">{t.common.noData}</CardContent></Card>
-        ) : events.map(event => (
-          <Card key={event.id} className={isPast(new Date(event.start_date)) && !isToday(new Date(event.start_date)) ? "opacity-60" : ""}>
-            <CardContent className="flex items-center justify-between py-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-medium">{event.title}</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{format(new Date(event.start_date), "dd/MM/yyyy")}</span>
-                    {event.location && <><MapPin className="w-3 h-3" /><span>{event.location}</span></>}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge variant="secondary">{eventTypeLabels[event.event_type] || event.event_type}</Badge>
-                {Number(event.budget) > 0 && <span className="text-sm font-medium">${Number(event.budget).toLocaleString()}</span>}
-                <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(event.id)}>
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          {isLoading ? (
+            <p className="text-center text-muted-foreground py-8">{t.common.loading}</p>
+          ) : (
+            <DataTable
+              data={events}
+              columns={[
+                {
+                  key: "title", header: t.common.name, render: (event) => (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Calendar className="w-4 h-4 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{event.title}</h3>
+                        {event.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{event.location}</p>}
+                      </div>
+                    </div>
+                  ),
+                },
+                { key: "event_type", header: t.common.type, render: (event) => <Badge variant="secondary">{eventTypeLabels[event.event_type] || event.event_type}</Badge> },
+                { key: "start_date", header: t.events.startDate, render: (event) => format(new Date(event.start_date), "dd/MM/yyyy"), getValue: (event) => event.start_date },
+                { key: "budget", header: t.events.budget, render: (event) => Number(event.budget) > 0 ? `${Number(event.budget).toLocaleString()} BIF` : "—", className: "text-right" },
+                {
+                  key: "actions", header: "", sortable: false, searchable: false, render: (event) => (
+                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(event.id)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  ),
+                },
+              ] as DataTableColumn<any>[]}
+              pageSize={5}
+              searchPlaceholder="Rechercher un événement..."
+              emptyMessage={t.common.noData}
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

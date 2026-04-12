@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { Plus, CheckCircle2, Clock, AlertTriangle, ShoppingCart, Trash2, Edit } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -234,56 +235,51 @@ export default function Needs() {
 
       {/* Table */}
       <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Besoin</TableHead>
-                <TableHead>Prix estimé</TableHead>
-                <TableHead>Priorité</TableHead>
-                <TableHead>Demandé par</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Chargement...</TableCell></TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun besoin enregistré</TableCell></TableRow>
-              ) : filtered.map(need => {
-                const prio = priorityConfig[need.priority as keyof typeof priorityConfig] || priorityConfig.medium;
-                const stat = statusConfig[need.status as keyof typeof statusConfig] || statusConfig.pending;
-                return (
-                  <TableRow key={need.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{need.title}</p>
-                        {need.description && <p className="text-xs text-muted-foreground line-clamp-1">{need.description}</p>}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-semibold">{Number(need.estimated_price).toLocaleString()} BIF</TableCell>
-                    <TableCell><Badge className={prio.color}>{prio.label}</Badge></TableCell>
-                    <TableCell>{need.requested_by || "—"}</TableCell>
-                    <TableCell><Badge className={stat.color}>{stat.label}</Badge></TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(need.created_at).toLocaleDateString("fr-FR")}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-1 justify-end">
-                        {need.status === "pending" && (
-                          <Button size="sm" variant="ghost" className="text-green-600" onClick={() => validateMutation.mutate(need.id)} title="Valider">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button size="sm" variant="ghost" onClick={() => openEdit(need)}><Edit className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteMutation.mutate(need.id)}><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+        <CardContent className="pt-6">
+          <DataTable
+            data={filtered}
+            columns={[
+              {
+                key: "title", header: "Besoin", render: (need) => (
+                  <div>
+                    <p className="font-medium">{need.title}</p>
+                    {need.description && <p className="text-xs text-muted-foreground line-clamp-1">{need.description}</p>}
+                  </div>
+                ),
+              },
+              { key: "estimated_price", header: "Prix estimé", render: (need) => <span className="font-semibold">{Number(need.estimated_price).toLocaleString()} BIF</span>, className: "text-right" },
+              {
+                key: "priority", header: "Priorité", render: (need) => {
+                  const prio = priorityConfig[need.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+                  return <Badge className={prio.color}>{prio.label}</Badge>;
+                },
+              },
+              { key: "requested_by", header: "Demandé par", render: (need) => need.requested_by || "—" },
+              {
+                key: "status", header: "Statut", render: (need) => {
+                  const stat = statusConfig[need.status as keyof typeof statusConfig] || statusConfig.pending;
+                  return <Badge className={stat.color}>{stat.label}</Badge>;
+                },
+              },
+              { key: "created_at", header: "Date", render: (need) => new Date(need.created_at).toLocaleDateString("fr-FR"), getValue: (need) => need.created_at },
+              {
+                key: "actions", header: "Actions", sortable: false, searchable: false, className: "text-right", render: (need) => (
+                  <div className="flex gap-1 justify-end">
+                    {need.status === "pending" && (
+                      <Button size="sm" variant="ghost" className="text-green-600" onClick={() => validateMutation.mutate(need.id)} title="Valider">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(need)}><Edit className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteMutation.mutate(need.id)}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                ),
+              },
+            ] as DataTableColumn<Need>[]}
+            pageSize={5}
+            searchPlaceholder="Rechercher un besoin..."
+            emptyMessage="Aucun besoin enregistré"
+          />
         </CardContent>
       </Card>
 
