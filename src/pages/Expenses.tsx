@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, TrendingDown, AlertTriangle } from "lucide-react";
@@ -242,28 +243,19 @@ export default function Expenses() {
         </CardHeader>
         <CardContent>
           {expenseRecords && expenseRecords.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Catégorie</TableHead>
-                  <TableHead>Sous-catégorie</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Montant</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenseRecords.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>{new Date(record.date).toLocaleDateString("fr-FR")}</TableCell>
-                    <TableCell><Badge variant="outline">{record.category}</Badge></TableCell>
-                    <TableCell>{record.subcategory}</TableCell>
-                    <TableCell>{record.description || "—"}</TableCell>
-                    <TableCell className="text-right font-semibold text-destructive">{formatBIF(record.amount)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              data={expenseRecords}
+              columns={[
+                { key: "date", header: "Date", render: (r) => new Date(r.date).toLocaleDateString("fr-FR"), getValue: (r) => r.date },
+                { key: "category", header: "Catégorie", render: (r) => <Badge variant="outline">{r.category}</Badge> },
+                { key: "subcategory", header: "Sous-catégorie" },
+                { key: "description", header: "Description", render: (r) => r.description || "—" },
+                { key: "amount", header: "Montant", render: (r) => <span className="font-semibold text-destructive">{formatBIF(r.amount)}</span>, className: "text-right" },
+              ] as DataTableColumn<any>[]}
+              pageSize={5}
+              searchPlaceholder="Rechercher une dépense..."
+              emptyMessage="Aucune dépense enregistrée"
+            />
           ) : (
             <p className="text-center text-muted-foreground py-8">Aucune dépense enregistrée</p>
           )}

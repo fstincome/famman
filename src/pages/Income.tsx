@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Plus, TrendingUp, Wallet, PiggyBank } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -235,26 +236,18 @@ export default function Income() {
         </CardHeader>
         <CardContent>
           {incomeRecords && incomeRecords.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Montant</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {incomeRecords.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>{new Date(record.date).toLocaleDateString("fr-FR")}</TableCell>
-                    <TableCell>{record.source || "—"}</TableCell>
-                    <TableCell>{record.description || "—"}</TableCell>
-                    <TableCell className="text-right font-semibold">{formatBIF(record.amount)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable
+              data={incomeRecords}
+              columns={[
+                { key: "date", header: "Date", render: (r) => new Date(r.date).toLocaleDateString("fr-FR"), getValue: (r) => r.date },
+                { key: "source", header: "Source", render: (r) => r.source || "—" },
+                { key: "description", header: "Description", render: (r) => r.description || "—" },
+                { key: "amount", header: "Montant", render: (r) => <span className="font-semibold">{formatBIF(r.amount)}</span>, className: "text-right" },
+              ] as DataTableColumn<any>[]}
+              pageSize={5}
+              searchPlaceholder="Rechercher un revenu..."
+              emptyMessage="Aucun revenu enregistré"
+            />
           ) : (
             <p className="text-center text-muted-foreground py-8">Aucun revenu enregistré</p>
           )}

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -118,57 +119,46 @@ export default function Debts() {
   };
 
   const renderTable = (items: typeof debts, type: "debt" | "credit") => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t.common.name}</TableHead>
-          <TableHead>{type === "debt" ? t.debts.creditor : t.debts.debtor}</TableHead>
-          <TableHead>{t.debts.originalAmount}</TableHead>
-          <TableHead>{t.debts.remainingBalance}</TableHead>
-          <TableHead>{t.debts.dueDate}</TableHead>
-          <TableHead>Statut</TableHead>
-          <TableHead>{t.common.actions}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.length === 0 ? (
-          <TableRow><TableCell colSpan={7} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
-        ) : items.map(item => {
-          const isPaid = item.status === "paid" || Number(item.remaining_balance) <= 0;
-          const paidPercent = Number(item.original_amount) > 0
-            ? Math.round(((Number(item.original_amount) - Number(item.remaining_balance)) / Number(item.original_amount)) * 100)
-            : 0;
-          return (
-            <TableRow key={item.id} className={isPaid ? "opacity-60" : ""}>
-              <TableCell className="font-medium">{item.name}</TableCell>
-              <TableCell>{item.counterparty}</TableCell>
-              <TableCell>{formatBIF(Number(item.original_amount))}</TableCell>
-              <TableCell className="font-semibold">{formatBIF(Number(item.remaining_balance))}</TableCell>
-              <TableCell>{item.due_date ? format(new Date(item.due_date), "dd/MM/yyyy") : "—"}</TableCell>
-              <TableCell>
-                {isPaid ? (
-                  <Badge className="bg-green-600 text-white"><CheckCircle2 className="w-3 h-3 mr-1" />Payé</Badge>
-                ) : (
-                  <Badge variant="secondary">{paidPercent}% payé</Badge>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-1">
-                  {!isPaid && (
-                    <Button variant="outline" size="sm" onClick={() => openPayDialog(item)}>
-                      <MinusCircle className="w-4 h-4 mr-1" />Payer
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(item.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
+    <DataTable
+      data={items}
+      columns={[
+        { key: "name", header: t.common.name, render: (item) => <span className="font-medium">{item.name}</span> },
+        { key: "counterparty", header: type === "debt" ? t.debts.creditor : t.debts.debtor },
+        { key: "original_amount", header: t.debts.originalAmount, render: (item) => formatBIF(Number(item.original_amount)), className: "text-right" },
+        { key: "remaining_balance", header: t.debts.remainingBalance, render: (item) => <span className="font-semibold">{formatBIF(Number(item.remaining_balance))}</span>, className: "text-right" },
+        { key: "due_date", header: t.debts.dueDate, render: (item) => item.due_date ? format(new Date(item.due_date), "dd/MM/yyyy") : "—" },
+        {
+          key: "status", header: "Statut", render: (item) => {
+            const isPaid = item.status === "paid" || Number(item.remaining_balance) <= 0;
+            const paidPercent = Number(item.original_amount) > 0
+              ? Math.round(((Number(item.original_amount) - Number(item.remaining_balance)) / Number(item.original_amount)) * 100) : 0;
+            return isPaid
+              ? <Badge className="bg-green-600 text-white"><CheckCircle2 className="w-3 h-3 mr-1" />Payé</Badge>
+              : <Badge variant="secondary">{paidPercent}% payé</Badge>;
+          },
+        },
+        {
+          key: "actions", header: t.common.actions, sortable: false, searchable: false, render: (item) => {
+            const isPaid = item.status === "paid" || Number(item.remaining_balance) <= 0;
+            return (
+              <div className="flex gap-1">
+                {!isPaid && (
+                  <Button variant="outline" size="sm" onClick={() => openPayDialog(item)}>
+                    <MinusCircle className="w-4 h-4 mr-1" />Payer
                   </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                )}
+                <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(item.id)}>
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+            );
+          },
+        },
+      ] as DataTableColumn<any>[]}
+      pageSize={5}
+      searchPlaceholder="Rechercher..."
+      emptyMessage={t.common.noData}
+    />
   );
 
   return (
