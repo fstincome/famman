@@ -2084,6 +2084,68 @@ export type Database = {
           },
         ]
       }
+      recurring_transactions: {
+        Row: {
+          amount: number
+          category: string
+          company_id: string
+          created_at: string
+          currency: string
+          day_of_month: number | null
+          description: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          last_generated_at: string | null
+          next_due_date: string
+          title: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          company_id: string
+          created_at?: string
+          currency?: string
+          day_of_month?: number | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          next_due_date?: string
+          title: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          company_id?: string
+          created_at?: string
+          currency?: string
+          day_of_month?: number | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          next_due_date?: string
+          title?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       regional_revenue: {
         Row: {
           amount: number
