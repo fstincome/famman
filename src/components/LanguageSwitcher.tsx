@@ -15,10 +15,16 @@ export function LanguageSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setLanguage("fr")} className={language === "fr" ? "bg-accent" : ""}>
-          🇫🇷 {t.common.french}
+          🇫🇷 Français
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setLanguage("en")} className={language === "en" ? "bg-accent" : ""}>
-          🇬🇧 {t.common.english}
+          🇬🇧 English
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setLanguage("sw")} className={language === "sw" ? "bg-accent" : ""}>
+          🇹🇿 Kiswahili
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setLanguage("it")} className={language === "it" ? "bg-accent" : ""}>
+          🇮🇹 Italiano
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
