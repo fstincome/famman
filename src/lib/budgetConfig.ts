@@ -27,7 +27,7 @@ export const BUDGET_CATEGORIES: BudgetCategory[] = [
     totalPercentage: 28,
     subcategories: [
       { name: "Scolarité", percentage: 11.67 },
-      { name: "Santé", percentage: 8.33 },
+      { name: "Santé", percentage: 8.00 },
       { name: "Vêtements", percentage: 3.33 },
       { name: "Solidarité", percentage: 5.00 },
     ],
