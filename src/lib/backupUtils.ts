@@ -59,21 +59,41 @@ export async function purgeCompanyData(): Promise<void> {
   const { data: companyId } = await supabase.rpc('get_user_company_id');
   if (!companyId) throw new Error('No company found');
 
+  // Toutes les tables transactionnelles. On préserve: companies, profiles,
+  // user_roles, accounting_settings et les tables demo_baseline_*.
   const tables = [
     'project_tasks',
     'family_projects',
     'family_events',
+    'family_health',
+    'family_needs',
     'family_assets',
     'family_debts',
+    'recurring_transactions',
     'contacts',
     'budget_envelopes',
     'expense_records',
     'income_records',
+    'expenses_new',
+    'expense_categories',
+    'revenue_sources',
+    'financial_metrics',
+    'bank_transactions',
+    'accounts',
+    'payments',
+    'invoices',
+    'customers',
+    'fx_rates',
+    'scheduled_reports',
+    'filter_segments',
+    'data_rejects',
+    'notifications',
+    'activity_log',
   ] as const;
 
   for (const table of tables) {
     const { error } = await supabase
-      .from(table)
+      .from(table as any)
       .delete()
       .eq('company_id', companyId);
     if (error) console.error(`Error purging ${table}:`, error);
