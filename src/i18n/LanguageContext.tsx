@@ -12,7 +12,8 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem("familyflow-language");
-    return (saved === "en" || saved === "fr") ? saved : "fr";
+    if (saved === "en" || saved === "fr" || saved === "sw" || saved === "it") return saved;
+    return "fr";
   });
 
   const setLanguage = useCallback((lang: Language) => {
