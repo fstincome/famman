@@ -10,6 +10,7 @@ import { generateBackupSQL, purgeCompanyData, downloadSQL } from "@/lib/backupUt
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { logAndNotify } from "@/hooks/useActivityLogger";
+import { Can } from "@/components/Can";
 import { format, differenceInDays, isAfter, isBefore, startOfMonth, endOfMonth, formatDistanceToNow } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 
@@ -269,14 +270,18 @@ export default function Overview() {
           <p className="text-muted-foreground">{t.dashboard.subtitle}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleBackup} disabled={backingUp} className="gap-2">
-            <Download className="w-4 h-4" />
-            {backingUp ? '...' : 'Backup'}
-          </Button>
-          <Button variant="destructive" onClick={handlePurge} disabled={purging} className="gap-2">
-            <Trash2 className="w-4 h-4" />
-            {purging ? '...' : language === "fr" ? 'Vider' : 'Purge'}
-          </Button>
+          <Can action="dashboard.backup">
+            <Button variant="outline" onClick={handleBackup} disabled={backingUp} className="gap-2">
+              <Download className="w-4 h-4" />
+              {backingUp ? '...' : 'Backup'}
+            </Button>
+          </Can>
+          <Can action="dashboard.purge">
+            <Button variant="destructive" onClick={handlePurge} disabled={purging} className="gap-2">
+              <Trash2 className="w-4 h-4" />
+              {purging ? '...' : language === "fr" ? 'Vider' : 'Purge'}
+            </Button>
+          </Can>
         </div>
       </div>
 
