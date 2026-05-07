@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, TrendingDown, AlertTriangle } from "lucide-react";
+import { Plus, TrendingDown, AlertTriangle, ArrowRightLeft } from "lucide-react";
+import { EnvelopeTransferDialog } from "@/components/EnvelopeTransferDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useExpenseRecords } from "@/hooks/useExpenseRecords";
 import { useBudgetEnvelopes } from "@/hooks/useBudgetEnvelopes";
@@ -21,6 +22,7 @@ export default function Expenses() {
   const { data: expenseRecords, isLoading: expensesLoading } = useExpenseRecords();
   const { envelopes, isLoading: envelopesLoading, getAvailableAmount, invalidate: invalidateEnvelopes } = useBudgetEnvelopes();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -137,9 +139,14 @@ export default function Expenses() {
           <h1 className="text-3xl font-bold text-foreground">Sorties / Dépenses</h1>
           <p className="text-muted-foreground">Gérez vos dépenses par catégorie avec contrôle budgétaire</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Nouvelle dépense
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setTransferOpen(true)}>
+            <ArrowRightLeft className="w-4 h-4 mr-2" /> Transférer
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Nouvelle dépense
+          </Button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -363,6 +370,8 @@ export default function Expenses() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <EnvelopeTransferDialog open={transferOpen} onOpenChange={setTransferOpen} />
     </div>
   );
 }
