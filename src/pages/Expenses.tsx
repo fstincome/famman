@@ -22,6 +22,7 @@ export default function Expenses() {
   const { data: expenseRecords, isLoading: expensesLoading } = useExpenseRecords();
   const { envelopes, isLoading: envelopesLoading, getAvailableAmount, invalidate: invalidateEnvelopes } = useBudgetEnvelopes();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [selectedCategory, setSelectedCategory] = useState("");
