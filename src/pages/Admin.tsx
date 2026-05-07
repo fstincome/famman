@@ -11,8 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Users, Shield } from "lucide-react";
+import { Plus, Users, Shield, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PermissionsManager } from "@/components/PermissionsManager";
 
 const FAMILY_ROLES = [
   "father", "mother", "son", "daughter", "brother", "sister",
@@ -144,51 +146,66 @@ export default function Admin() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Users className="w-4 h-4" />{t.admin.familyMembers}</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{members.length}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Shield className="w-4 h-4" />{t.admin.adminRole}</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{members.filter(m => m.role === "admin").length}</p></CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="members" className="w-full">
+        <TabsList>
+          <TabsTrigger value="members"><Users className="w-4 h-4 mr-2" />{t.admin.familyMembers}</TabsTrigger>
+          {isAdmin && <TabsTrigger value="permissions"><ShieldCheck className="w-4 h-4 mr-2" />Permissions</TabsTrigger>}
+        </TabsList>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t.common.name}</TableHead>
-                <TableHead>{t.admin.familyRole}</TableHead>
-                <TableHead>{t.auth.email}</TableHead>
-                <TableHead>{t.admin.permission}</TableHead>
-                <TableHead>{t.admin.accountCreated}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.loading}</TableCell></TableRow>
-              ) : members.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
-              ) : members.map(member => (
-                <TableRow key={member.id}>
-                  <TableCell className="font-medium">{member.first_name} {member.last_name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {familyRoleLabels[member.family_role || "member"] || member.family_role || t.admin.memberRole}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{member.email}</TableCell>
-                  <TableCell><Badge variant={member.role === "admin" ? "default" : "secondary"}>{roleLabels[member.role || "user"]}</Badge></TableCell>
-                  <TableCell>{format(new Date(member.created_at), "dd/MM/yyyy")}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        <TabsContent value="members" className="space-y-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Users className="w-4 h-4" />{t.admin.familyMembers}</CardTitle></CardHeader>
+              <CardContent><p className="text-2xl font-bold">{members.length}</p></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground flex items-center gap-2"><Shield className="w-4 h-4" />{t.admin.adminRole}</CardTitle></CardHeader>
+              <CardContent><p className="text-2xl font-bold">{members.filter(m => m.role === "admin").length}</p></CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t.common.name}</TableHead>
+                    <TableHead>{t.admin.familyRole}</TableHead>
+                    <TableHead>{t.auth.email}</TableHead>
+                    <TableHead>{t.admin.permission}</TableHead>
+                    <TableHead>{t.admin.accountCreated}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.loading}</TableCell></TableRow>
+                  ) : members.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
+                  ) : members.map(member => (
+                    <TableRow key={member.id}>
+                      <TableCell className="font-medium">{member.first_name} {member.last_name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {familyRoleLabels[member.family_role || "member"] || member.family_role || t.admin.memberRole}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{member.email}</TableCell>
+                      <TableCell><Badge variant={member.role === "admin" ? "default" : "secondary"}>{roleLabels[member.role || "user"]}</Badge></TableCell>
+                      <TableCell>{format(new Date(member.created_at), "dd/MM/yyyy")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="permissions" className="mt-4">
+            <PermissionsManager />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
