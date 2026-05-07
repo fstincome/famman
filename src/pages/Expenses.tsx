@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, TrendingDown, AlertTriangle } from "lucide-react";
+import { Plus, TrendingDown, AlertTriangle, ArrowRightLeft } from "lucide-react";
+import { EnvelopeTransferDialog } from "@/components/EnvelopeTransferDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useExpenseRecords } from "@/hooks/useExpenseRecords";
 import { useBudgetEnvelopes } from "@/hooks/useBudgetEnvelopes";
