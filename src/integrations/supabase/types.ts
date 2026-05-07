@@ -2237,6 +2237,36 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          action_key: string
+          allowed: boolean
+          company_id: string
+          created_at: string
+          family_role: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          action_key: string
+          allowed?: boolean
+          company_id: string
+          created_at?: string
+          family_role: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          action_key?: string
+          allowed?: boolean
+          company_id?: string
+          created_at?: string
+          family_role?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scheduled_reports: {
         Row: {
           company_id: string
@@ -2417,6 +2447,7 @@ export type Database = {
       }
       get_accounting_basis: { Args: { _company_id: string }; Returns: string }
       get_user_company_id: { Args: never; Returns: string }
+      has_permission: { Args: { _action_key: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
