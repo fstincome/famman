@@ -370,6 +370,8 @@ export default function Expenses() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <EnvelopeTransferDialog open={transferOpen} onOpenChange={setTransferOpen} />
     </div>
   );
 }
