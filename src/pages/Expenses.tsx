@@ -139,9 +139,14 @@ export default function Expenses() {
           <h1 className="text-3xl font-bold text-foreground">Sorties / Dépenses</h1>
           <p className="text-muted-foreground">Gérez vos dépenses par catégorie avec contrôle budgétaire</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Nouvelle dépense
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setTransferOpen(true)}>
+            <ArrowRightLeft className="w-4 h-4 mr-2" /> Transférer
+          </Button>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Nouvelle dépense
+          </Button>
+        </div>
       </div>
 
       {/* Summary */}
