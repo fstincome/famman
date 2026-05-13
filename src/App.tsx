@@ -27,6 +27,7 @@ import Needs from "./pages/Needs";
 import Health from "./pages/Health";
 import FamilyCalendar from "./pages/FamilyCalendar";
 import RecurringTransactions from "./pages/RecurringTransactions";
+import FamilyMembers from "./pages/FamilyMembers";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/projects" element={<DashboardLayout><Projects /></DashboardLayout>} />
               <Route path="/debts" element={<DashboardLayout><Debts /></DashboardLayout>} />
               <Route path="/contacts" element={<DashboardLayout><Contacts /></DashboardLayout>} />
+              <Route path="/members" element={<DashboardLayout><FamilyMembers /></DashboardLayout>} />
               <Route path="/bank-accounts" element={<DashboardLayout><BankAccounts /></DashboardLayout>} />
               <Route path="/needs" element={<DashboardLayout><Needs /></DashboardLayout>} />
               <Route path="/health" element={<DashboardLayout><Health /></DashboardLayout>} />
