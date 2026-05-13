@@ -1449,6 +1449,123 @@ export type Database = {
           },
         ]
       }
+      family_members: {
+        Row: {
+          address: string | null
+          avatar_color: string | null
+          biography: string | null
+          birth_date: string | null
+          birth_place: string | null
+          blood_type: string | null
+          children_count: number | null
+          company_id: string
+          created_at: string
+          current_city: string | null
+          current_country: string | null
+          death_date: string | null
+          email: string | null
+          employer: string | null
+          family_role: string | null
+          father_name: string | null
+          first_name: string
+          gender: string | null
+          hobbies: string | null
+          id: string
+          is_alive: boolean
+          languages: string[] | null
+          last_name: string | null
+          marital_status: string | null
+          mother_name: string | null
+          national_id: string | null
+          nationality: string | null
+          nickname: string | null
+          notes: string | null
+          passport_number: string | null
+          phone: string | null
+          photo_url: string | null
+          profession: string | null
+          religion: string | null
+          spouse_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_color?: string | null
+          biography?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          blood_type?: string | null
+          children_count?: number | null
+          company_id: string
+          created_at?: string
+          current_city?: string | null
+          current_country?: string | null
+          death_date?: string | null
+          email?: string | null
+          employer?: string | null
+          family_role?: string | null
+          father_name?: string | null
+          first_name: string
+          gender?: string | null
+          hobbies?: string | null
+          id?: string
+          is_alive?: boolean
+          languages?: string[] | null
+          last_name?: string | null
+          marital_status?: string | null
+          mother_name?: string | null
+          national_id?: string | null
+          nationality?: string | null
+          nickname?: string | null
+          notes?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          profession?: string | null
+          religion?: string | null
+          spouse_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          avatar_color?: string | null
+          biography?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          blood_type?: string | null
+          children_count?: number | null
+          company_id?: string
+          created_at?: string
+          current_city?: string | null
+          current_country?: string | null
+          death_date?: string | null
+          email?: string | null
+          employer?: string | null
+          family_role?: string | null
+          father_name?: string | null
+          first_name?: string
+          gender?: string | null
+          hobbies?: string | null
+          id?: string
+          is_alive?: boolean
+          languages?: string[] | null
+          last_name?: string | null
+          marital_status?: string | null
+          mother_name?: string | null
+          national_id?: string | null
+          nationality?: string | null
+          nickname?: string | null
+          notes?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          profession?: string | null
+          religion?: string | null
+          spouse_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       family_needs: {
         Row: {
           company_id: string
@@ -1885,6 +2002,162 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_career: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          is_current: boolean
+          location: string | null
+          member_id: string
+          organization: string | null
+          position: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean
+          location?: string | null
+          member_id: string
+          organization?: string | null
+          position: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean
+          location?: string | null
+          member_id?: string
+          organization?: string | null
+          position?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_career_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_education: {
+        Row: {
+          company_id: string
+          created_at: string
+          degree: string | null
+          description: string | null
+          end_year: number | null
+          field_of_study: string | null
+          grade: string | null
+          id: string
+          institution: string
+          location: string | null
+          member_id: string
+          start_year: number | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          degree?: string | null
+          description?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
+          grade?: string | null
+          id?: string
+          institution: string
+          location?: string | null
+          member_id: string
+          start_year?: number | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          degree?: string | null
+          description?: string | null
+          end_year?: number | null
+          field_of_study?: string | null
+          grade?: string | null
+          id?: string
+          institution?: string
+          location?: string | null
+          member_id?: string
+          start_year?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_education_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_milestones: {
+        Row: {
+          company_id: string
+          created_at: string
+          date: string | null
+          description: string | null
+          id: string
+          location: string | null
+          member_id: string
+          milestone_type: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          member_id: string
+          milestone_type?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          member_id?: string
+          milestone_type?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_milestones_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
             referencedColumns: ["id"]
           },
         ]
