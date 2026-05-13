@@ -49,6 +49,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   { key: "projects", label: { fr: "Projets", en: "Projects" }, actions: crud("projects", "un projet", "project") },
   { key: "health", label: { fr: "Santé", en: "Health" }, actions: crud("health", "une entrée santé", "health entry") },
   { key: "contacts", label: { fr: "Contacts", en: "Contacts" }, actions: crud("contacts", "un contact", "contact") },
+  { key: "members", label: { fr: "Membres famille", en: "Family members" }, actions: crud("members", "un membre", "member") },
   { key: "bank", label: { fr: "Comptes bancaires", en: "Bank accounts" }, actions: crud("bank", "un compte", "account") },
   { key: "recurring", label: { fr: "Transactions récurrentes", en: "Recurring" }, actions: [
       ...crud("recurring", "une récurrence", "recurring"),
