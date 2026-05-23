@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { FinancialSidebar } from "./FinancialSidebar";
 import { NotificationPopover } from "./NotificationPopover";
 import { SearchResults } from "./SearchResults";
+import { QuotesTicker } from "./QuotesTicker";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeCustomizer } from "./ThemeCustomizer";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="min-h-screen flex w-full bg-background">
         <FinancialSidebar />
         <div className="flex-1 flex flex-col overflow-visible">
+          <QuotesTicker />
           <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 sticky top-0 z-50 overflow-visible">
             <div className="flex items-center gap-4 flex-1 overflow-visible relative">
               <SidebarTrigger className="lg:hidden" />
