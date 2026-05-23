@@ -87,8 +87,6 @@ export async function purgeCompanyData(): Promise<void> {
     'scheduled_reports',
     'filter_segments',
     'data_rejects',
-    'notifications',
-    'activity_log',
   ] as const;
 
   for (const table of tables) {
@@ -97,6 +95,16 @@ export async function purgeCompanyData(): Promise<void> {
       .delete()
       .eq('company_id', companyId);
     if (error) console.error(`Error purging ${table}:`, error);
+  }
+
+  // Purge notifications & activity log en dernier (les triggers peuvent
+  // en générer pendant la suppression des autres tables).
+  for (const tail of ['notifications', 'activity_log'] as const) {
+    const { error } = await supabase
+      .from(tail as any)
+      .delete()
+      .eq('company_id', companyId);
+    if (error) console.error(`Error purging ${tail}:`, error);
   }
 }
 
