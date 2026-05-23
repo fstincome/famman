@@ -78,7 +78,7 @@ export function FinancialSidebar() {
               {mainNavItems.map(item => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={getNavClasses(item.url)}>
+                    <NavLink to={item.url} onClick={handleNavClick} className={getNavClasses(item.url)}>
                       <item.icon className={getIconClasses(item.url)} />
                       {!collapsed && <span className="font-medium">{item.title}</span>}
                     </NavLink>
@@ -98,7 +98,7 @@ export function FinancialSidebar() {
               {adminNavItems.map(item => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={getNavClasses(item.url)}>
+                    <NavLink to={item.url} onClick={handleNavClick} className={getNavClasses(item.url)}>
                       <item.icon className={getIconClasses(item.url)} />
                       {!collapsed && <span className="font-medium">{item.title}</span>}
                     </NavLink>
