@@ -8,8 +8,9 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import logoImg from "@/assets/logo.png";
 
 export function FinancialSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const location = useLocation();
+  const handleNavClick = () => { if (isMobile) setOpenMobile(false); };
   const currentPath = location.pathname;
   const [csvUploaderOpen, setCsvUploaderOpen] = useState(false);
   const collapsed = state === "collapsed";
