@@ -9,19 +9,45 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Calendar, MapPin, Trash2 } from "lucide-react";
+import { Plus, Calendar, MapPin, Trash2, Pencil } from "lucide-react";
 import { DataTable, DataTableColumn } from "@/components/DataTable";
 import { format, isPast, isToday, isFuture } from "date-fns";
 import { logAndNotify } from "@/hooks/useActivityLogger";
 
-const EVENT_TYPES = ["birthday", "holiday", "celebration", "appointment", "reminder", "other"] as const;
+const EVENT_TYPES = [
+  "birthday", "wedding", "anniversary", "baptism", "funeral", "graduation",
+  "holiday", "vacation", "celebration", "party", "religious", "cultural",
+  "appointment", "medical", "meeting", "reminder",
+  "training", "bootcamp", "conference", "workshop", "seminar", "exam", "school",
+  "travel", "sport", "competition", "volunteer", "charity",
+  "business", "interview", "deadline",
+  "other"
+] as const;
+
+const TYPE_LABELS_FR: Record<string, string> = {
+  birthday: "Anniversaire", wedding: "Mariage", anniversary: "Anniversaire de mariage",
+  baptism: "Baptême", funeral: "Funérailles", graduation: "Remise de diplôme",
+  holiday: "Vacances", vacation: "Congés", celebration: "Fête", party: "Soirée",
+  religious: "Religieux", cultural: "Culturel",
+  appointment: "Rendez-vous", medical: "Rendez-vous médical", meeting: "Réunion",
+  reminder: "Rappel",
+  training: "Formation", bootcamp: "Bootcamp", conference: "Conférence",
+  workshop: "Atelier", seminar: "Séminaire", exam: "Examen", school: "Scolaire",
+  travel: "Voyage", sport: "Sport", competition: "Compétition",
+  volunteer: "Bénévolat", charity: "Œuvre caritative",
+  business: "Affaires / Business", interview: "Entretien", deadline: "Échéance",
+  other: "Autre",
+};
+
+const emptyForm = { title: "", event_type: "other", description: "", start_date: "", end_date: "", location: "", budget: "" };
 
 export default function Events() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", event_type: "other", description: "", start_date: "", end_date: "", location: "", budget: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["family-events"],
@@ -34,11 +60,11 @@ export default function Events() {
     },
   });
 
-  const addMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async (event: typeof form) => {
       const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", (await supabase.auth.getUser()).data.user!.id).single();
       if (!profile?.company_id) throw new Error("No company");
-      const { error } = await supabase.from("family_events").insert({
+      const payload = {
         company_id: profile.company_id,
         title: event.title,
         event_type: event.event_type,
@@ -47,17 +73,24 @@ export default function Events() {
         end_date: event.end_date || null,
         location: event.location || null,
         budget: parseFloat(event.budget) || 0,
-      });
-      if (error) throw error;
+      };
+      if (editingId) {
+        const { error } = await supabase.from("family_events").update(payload).eq("id", editingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("family_events").insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["family-events"] });
       logAndNotify(
-        { action: "create", entity_type: "event", entity_name: form.title, details: { type: form.event_type, date: form.start_date } },
-        { title: "📅 Événement ajouté", message: `${form.title} — ${form.start_date}`, type: "success" }
+        { action: editingId ? "update" : "create", entity_type: "event", entity_id: editingId || undefined, entity_name: form.title, details: { type: form.event_type, date: form.start_date } },
+        { title: editingId ? "✏️ Événement modifié" : "📅 Événement ajouté", message: `${form.title} — ${form.start_date}`, type: "success" }
       );
       setOpen(false);
-      setForm({ title: "", event_type: "other", description: "", start_date: "", end_date: "", location: "", budget: "" });
+      setEditingId(null);
+      setForm(emptyForm);
       toast({ title: t.common.save, description: "✓" });
     },
   });
@@ -78,14 +111,27 @@ export default function Events() {
     },
   });
 
-  const eventTypeLabels: Record<string, string> = {
-    birthday: t.events.birthday,
-    holiday: t.events.holiday,
-    celebration: t.events.celebration,
-    appointment: t.events.appointment,
-    reminder: t.events.reminder,
-    other: t.income.other,
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setOpen(true);
   };
+
+  const openEdit = (event: any) => {
+    setEditingId(event.id);
+    setForm({
+      title: event.title || "",
+      event_type: event.event_type || "other",
+      description: event.description || "",
+      start_date: event.start_date || "",
+      end_date: event.end_date || "",
+      location: event.location || "",
+      budget: event.budget ? String(event.budget) : "",
+    });
+    setOpen(true);
+  };
+
+  const labelFor = (type: string) => (t.events as any)[type] || TYPE_LABELS_FR[type] || type;
 
   const upcomingEvents = events.filter(e => isFuture(new Date(e.start_date)) || isToday(new Date(e.start_date)));
   const pastEvents = events.filter(e => isPast(new Date(e.start_date)) && !isToday(new Date(e.start_date)));
@@ -97,18 +143,18 @@ export default function Events() {
           <h1 className="text-2xl font-bold text-foreground">{t.events.title}</h1>
           <p className="text-muted-foreground">{t.events.subtitle}</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingId(null); setForm(emptyForm); } }}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" />{t.events.addEvent}</Button>
+            <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />{t.events.addEvent}</Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{t.events.addEvent}</DialogTitle></DialogHeader>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>{editingId ? (t.common.edit + " — " + t.events.title) : t.events.addEvent}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <Input placeholder={t.common.name} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
               <Select value={form.event_type} onValueChange={v => setForm({ ...form, event_type: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {EVENT_TYPES.map(type => <SelectItem key={type} value={type}>{eventTypeLabels[type]}</SelectItem>)}
+                <SelectContent className="max-h-72">
+                  {EVENT_TYPES.map(type => <SelectItem key={type} value={type}>{labelFor(type)}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Input placeholder={t.common.description} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
@@ -118,7 +164,7 @@ export default function Events() {
               </div>
               <Input placeholder={t.events.location} value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
               <Input type="number" placeholder={t.events.budget} value={form.budget} onChange={e => setForm({ ...form, budget: e.target.value })} />
-              <Button className="w-full" onClick={() => addMutation.mutate(form)} disabled={!form.title || !form.start_date || addMutation.isPending}>
+              <Button className="w-full" onClick={() => saveMutation.mutate(form)} disabled={!form.title || !form.start_date || saveMutation.isPending}>
                 {t.common.save}
               </Button>
             </div>
@@ -155,14 +201,19 @@ export default function Events() {
                     </div>
                   ),
                 },
-                { key: "event_type", header: t.common.type, render: (event) => <Badge variant="secondary">{eventTypeLabels[event.event_type] || event.event_type}</Badge> },
+                { key: "event_type", header: t.common.type, render: (event) => <Badge variant="secondary">{labelFor(event.event_type)}</Badge> },
                 { key: "start_date", header: t.events.startDate, render: (event) => format(new Date(event.start_date), "dd/MM/yyyy"), getValue: (event) => event.start_date },
                 { key: "budget", header: t.events.budget, render: (event) => Number(event.budget) > 0 ? `${Number(event.budget).toLocaleString()} BIF` : "—", className: "text-right" },
                 {
                   key: "actions", header: "", sortable: false, searchable: false, render: (event) => (
-                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(event.id)}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(event)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(event.id)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
                   ),
                 },
               ] as DataTableColumn<any>[]}
