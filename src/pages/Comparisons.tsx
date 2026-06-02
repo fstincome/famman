@@ -16,7 +16,7 @@ type Granularity = "month" | "quarter" | "year";
 
 interface Range { start: Date; end: Date; label: string; }
 
-function computeRanges(g: Granularity, locale: Locale): { current: Range; previous: Range } {
+function computeRanges(g: Granularity, locale: typeof fr): { current: Range; previous: Range } {
   const now = new Date();
   if (g === "month") {
     const cs = startOfMonth(now), ce = endOfMonth(now);
