@@ -26,6 +26,7 @@ export default function Overview() {
   const [backingUp, setBackingUp] = useState(false);
   const [purging, setPurging] = useState(false);
   const [notificationsGenerated, setNotificationsGenerated] = useState(false);
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   const handleBackup = async () => {
     setBackingUp(true);
@@ -147,7 +148,7 @@ export default function Overview() {
     queryKey: ['dashboard-activity', companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase.from('activity_log').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(10);
+      const { data } = await supabase.from('activity_log').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(50);
       return (data || []) as any[];
     },
     enabled: !!companyId,
@@ -512,7 +513,7 @@ export default function Overview() {
           </div>
         ) : (
           <div className="space-y-3">
-            {activityLog.map((log: any) => {
+            {(showAllActivity ? activityLog : activityLog.slice(0, 5)).map((log: any) => {
               const actionIcons: Record<string, string> = { create: "➕", update: "✏️", delete: "🗑️", validate: "✅", payment: "💸", alert: "🔔" };
               return (
                 <div key={log.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
@@ -531,7 +532,17 @@ export default function Overview() {
                 </div>
               );
             })}
+            {activityLog.length > 5 && (
+              <div className="pt-2 text-center">
+                <Button variant="ghost" size="sm" onClick={() => setShowAllActivity(!showAllActivity)}>
+                  {showAllActivity
+                    ? (language === "fr" ? "Voir moins" : "Show less")
+                    : (language === "fr" ? `Voir plus (${activityLog.length - 5})` : `Show more (${activityLog.length - 5})`)}
+                </Button>
+              </div>
+            )}
           </div>
+
         )}
       </Card>
     </div>
