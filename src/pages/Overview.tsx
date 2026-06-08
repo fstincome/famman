@@ -26,6 +26,7 @@ export default function Overview() {
   const [backingUp, setBackingUp] = useState(false);
   const [purging, setPurging] = useState(false);
   const [notificationsGenerated, setNotificationsGenerated] = useState(false);
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   const handleBackup = async () => {
     setBackingUp(true);
