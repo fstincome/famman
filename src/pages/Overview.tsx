@@ -148,7 +148,7 @@ export default function Overview() {
     queryKey: ['dashboard-activity', companyId],
     queryFn: async () => {
       if (!companyId) return [];
-      const { data } = await supabase.from('activity_log').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(10);
+      const { data } = await supabase.from('activity_log').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(50);
       return (data || []) as any[];
     },
     enabled: !!companyId,
