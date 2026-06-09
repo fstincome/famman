@@ -197,13 +197,14 @@ export default function Admin() {
                     <TableHead>{t.auth.email}</TableHead>
                     <TableHead>{t.admin.permission}</TableHead>
                     <TableHead>{t.admin.accountCreated}</TableHead>
+                    {isAdmin && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.loading}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8">{t.common.loading}</TableCell></TableRow>
                   ) : members.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
                   ) : members.map(member => (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">{member.first_name} {member.last_name}</TableCell>
@@ -215,6 +216,21 @@ export default function Admin() {
                       <TableCell>{member.email}</TableCell>
                       <TableCell><Badge variant={member.role === "admin" ? "default" : "secondary"}>{roleLabels[member.role || "user"]}</Badge></TableCell>
                       <TableCell>{format(new Date(member.created_at), "dd/MM/yyyy")}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setPwTarget({ id: member.user_id, name: `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email });
+                              setNewPassword("");
+                              setPwOpen(true);
+                            }}
+                          >
+                            <KeyRound className="w-4 h-4 mr-1" />Mot de passe
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
