@@ -26,6 +26,9 @@ export default function Admin() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwTarget, setPwTarget] = useState<{ id: string; name: string } | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [form, setForm] = useState({
     email: "", password: "", firstName: "", lastName: "",
     role: "viewer" as "admin" | "viewer",
