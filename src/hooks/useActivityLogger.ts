@@ -31,6 +31,17 @@ export async function logActivity(entry: ActivityEntry) {
       entity_name: entry.entity_name || null,
       details: entry.details || null,
     } as any);
+
+    // Fire-and-forget email notification to admins
+    supabase.functions.invoke("notify-admins", {
+      body: {
+        action: entry.action,
+        entity_type: entry.entity_type,
+        entity_id: entry.entity_id,
+        entity_name: entry.entity_name,
+        details: entry.details,
+      },
+    }).catch((e) => console.error("notify-admins invoke error:", e));
   } catch (e) {
     console.error("Activity log error:", e);
   }
@@ -74,6 +85,17 @@ export async function logAndNotify(
         type: notification.type,
       } as any),
     ]);
+
+    // Fire-and-forget email notification to admins
+    supabase.functions.invoke("notify-admins", {
+      body: {
+        action: activity.action,
+        entity_type: activity.entity_type,
+        entity_id: activity.entity_id,
+        entity_name: activity.entity_name,
+        details: activity.details,
+      },
+    }).catch((e) => console.error("notify-admins invoke error:", e));
   } catch (e) {
     console.error("Log & notify error:", e);
   }
