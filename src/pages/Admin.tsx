@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Users, Shield, ShieldCheck } from "lucide-react";
+import { Plus, Users, Shield, ShieldCheck, KeyRound } from "lucide-react";
 import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PermissionsManager } from "@/components/PermissionsManager";
@@ -26,6 +26,9 @@ export default function Admin() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwTarget, setPwTarget] = useState<{ id: string; name: string } | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [form, setForm] = useState({
     email: "", password: "", firstName: "", lastName: "",
     role: "viewer" as "admin" | "viewer",
@@ -76,6 +79,26 @@ export default function Admin() {
       setOpen(false);
       setForm({ email: "", password: "", firstName: "", lastName: "", role: "viewer", familyRole: "son" });
       toast({ title: t.admin.createUser, description: "✓" });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updatePasswordMutation = useMutation({
+    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
+      const { data, error } = await supabase.functions.invoke("update-member-password", {
+        body: { userId, password },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      setPwOpen(false);
+      setNewPassword("");
+      setPwTarget(null);
+      toast({ title: "Mot de passe mis à jour", description: "✓" });
     },
     onError: (error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -174,13 +197,14 @@ export default function Admin() {
                     <TableHead>{t.auth.email}</TableHead>
                     <TableHead>{t.admin.permission}</TableHead>
                     <TableHead>{t.admin.accountCreated}</TableHead>
+                    {isAdmin && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.loading}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8">{t.common.loading}</TableCell></TableRow>
                   ) : members.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8">{t.common.noData}</TableCell></TableRow>
                   ) : members.map(member => (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">{member.first_name} {member.last_name}</TableCell>
@@ -192,6 +216,21 @@ export default function Admin() {
                       <TableCell>{member.email}</TableCell>
                       <TableCell><Badge variant={member.role === "admin" ? "default" : "secondary"}>{roleLabels[member.role || "user"]}</Badge></TableCell>
                       <TableCell>{format(new Date(member.created_at), "dd/MM/yyyy")}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setPwTarget({ id: member.user_id, name: `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email });
+                              setNewPassword("");
+                              setPwOpen(true);
+                            }}
+                          >
+                            <KeyRound className="w-4 h-4 mr-1" />Mot de passe
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -206,6 +245,33 @@ export default function Admin() {
           </TabsContent>
         )}
       </Tabs>
+
+      <Dialog open={pwOpen} onOpenChange={setPwOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Changer le mot de passe — {pwTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nouveau mot de passe</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Min. 6 caractères"
+                autoComplete="new-password"
+              />
+            </div>
+            <Button
+              className="w-full"
+              disabled={!pwTarget || newPassword.length < 6 || updatePasswordMutation.isPending}
+              onClick={() => pwTarget && updatePasswordMutation.mutate({ userId: pwTarget.id, password: newPassword })}
+            >
+              {updatePasswordMutation.isPending ? "Mise à jour..." : "Mettre à jour"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
