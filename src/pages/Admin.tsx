@@ -85,6 +85,26 @@ export default function Admin() {
     },
   });
 
+  const updatePasswordMutation = useMutation({
+    mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
+      const { data, error } = await supabase.functions.invoke("update-member-password", {
+        body: { userId, password },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      setPwOpen(false);
+      setNewPassword("");
+      setPwTarget(null);
+      toast({ title: "Mot de passe mis à jour", description: "✓" });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const familyRoleLabels: Record<string, string> = {
     father: t.admin.father, mother: t.admin.mother,
     son: t.admin.son, daughter: t.admin.daughter,
