@@ -245,6 +245,33 @@ export default function Admin() {
           </TabsContent>
         )}
       </Tabs>
+
+      <Dialog open={pwOpen} onOpenChange={setPwOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Changer le mot de passe — {pwTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nouveau mot de passe</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Min. 6 caractères"
+                autoComplete="new-password"
+              />
+            </div>
+            <Button
+              className="w-full"
+              disabled={!pwTarget || newPassword.length < 6 || updatePasswordMutation.isPending}
+              onClick={() => pwTarget && updatePasswordMutation.mutate({ userId: pwTarget.id, password: newPassword })}
+            >
+              {updatePasswordMutation.isPending ? "Mise à jour..." : "Mettre à jour"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
