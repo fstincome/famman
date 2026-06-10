@@ -113,6 +113,37 @@ export default function Admin() {
     },
   });
 
+  const updateMemberMutation = useMutation({
+    mutationFn: async (payload: { userId: string; email: string; firstName: string; lastName: string; familyRole: string; role: "admin" | "viewer" }) => {
+      const { data, error } = await supabase.functions.invoke("update-family-member", { body: payload });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["family-members"] });
+      setEditOpen(false);
+      setEditTarget(null);
+      toast({ title: "Membre mis à jour", description: "✓" });
+    },
+    onError: (error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const deleteMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("delete-family-member", { body: { userId } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["family-members"] });
+      setDeleteTarget(null);
+      toast({ title: "Membre supprimé", description: "✓" });
+    },
+    onError: (error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
   const familyRoleLabels: Record<string, string> = {
     father: t.admin.father, mother: t.admin.mother,
     son: t.admin.son, daughter: t.admin.daughter,
