@@ -334,6 +334,72 @@ export default function Admin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Modifier le membre</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>{t.auth.firstName}</Label><Input value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} /></div>
+              <div><Label>{t.auth.lastName}</Label><Input value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} /></div>
+            </div>
+            <div><Label>{t.auth.email}</Label><Input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} /></div>
+            <div><Label>{t.admin.familyRole}</Label>
+              <Select value={editForm.familyRole} onValueChange={v => setEditForm({ ...editForm, familyRole: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FAMILY_ROLES.map(r => (
+                    <SelectItem key={r} value={r}>{familyRoleLabels[r] || r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>{t.admin.permission}</Label>
+              <Select value={editForm.role} onValueChange={v => setEditForm({ ...editForm, role: v as "admin" | "viewer" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">{t.admin.adminRole}</SelectItem>
+                  <SelectItem value="viewer">{t.admin.viewerRole}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              disabled={!editTarget || updateMemberMutation.isPending}
+              onClick={() => editTarget && updateMemberMutation.mutate({
+                userId: editTarget.user_id,
+                email: editForm.email,
+                firstName: editForm.firstName,
+                lastName: editForm.lastName,
+                familyRole: editForm.familyRole,
+                role: editForm.role,
+              })}
+            >
+              {updateMemberMutation.isPending ? "Mise à jour..." : "Enregistrer"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {deleteTarget?.name} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Le compte utilisateur et son profil seront définitivement supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteMemberMutation.mutate(deleteTarget.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
