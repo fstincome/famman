@@ -11,8 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Users, Shield, ShieldCheck, KeyRound } from "lucide-react";
+import { Plus, Users, Shield, ShieldCheck, KeyRound, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PermissionsManager } from "@/components/PermissionsManager";
 
@@ -29,6 +33,10 @@ export default function Admin() {
   const [pwOpen, setPwOpen] = useState(false);
   const [pwTarget, setPwTarget] = useState<{ id: string; name: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", email: "", familyRole: "son", role: "viewer" as "admin" | "viewer" });
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [form, setForm] = useState({
     email: "", password: "", firstName: "", lastName: "",
     role: "viewer" as "admin" | "viewer",
@@ -103,6 +111,37 @@ export default function Admin() {
     onError: (error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
+  });
+
+  const updateMemberMutation = useMutation({
+    mutationFn: async (payload: { userId: string; email: string; firstName: string; lastName: string; familyRole: string; role: "admin" | "viewer" }) => {
+      const { data, error } = await supabase.functions.invoke("update-family-member", { body: payload });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["family-members"] });
+      setEditOpen(false);
+      setEditTarget(null);
+      toast({ title: "Membre mis à jour", description: "✓" });
+    },
+    onError: (error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const deleteMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("delete-family-member", { body: { userId } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["family-members"] });
+      setDeleteTarget(null);
+      toast({ title: "Membre supprimé", description: "✓" });
+    },
+    onError: (error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
   });
 
   const familyRoleLabels: Record<string, string> = {
@@ -218,17 +257,40 @@ export default function Admin() {
                       <TableCell>{format(new Date(member.created_at), "dd/MM/yyyy")}</TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setPwTarget({ id: member.user_id, name: `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email });
-                              setNewPassword("");
-                              setPwOpen(true);
-                            }}
-                          >
-                            <KeyRound className="w-4 h-4 mr-1" />Mot de passe
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost" size="icon" title="Modifier"
+                              onClick={() => {
+                                setEditTarget(member);
+                                setEditForm({
+                                  firstName: member.first_name ?? "",
+                                  lastName: member.last_name ?? "",
+                                  email: member.email ?? "",
+                                  familyRole: member.family_role ?? "son",
+                                  role: (member.role === "admin" ? "admin" : "viewer"),
+                                });
+                                setEditOpen(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" title="Mot de passe"
+                              onClick={() => {
+                                setPwTarget({ id: member.user_id, name: `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email });
+                                setNewPassword("");
+                                setPwOpen(true);
+                              }}
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" title="Supprimer"
+                              onClick={() => setDeleteTarget({ id: member.user_id, name: `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email })}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>
@@ -272,6 +334,72 @@ export default function Admin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Modifier le membre</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>{t.auth.firstName}</Label><Input value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} /></div>
+              <div><Label>{t.auth.lastName}</Label><Input value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} /></div>
+            </div>
+            <div><Label>{t.auth.email}</Label><Input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} /></div>
+            <div><Label>{t.admin.familyRole}</Label>
+              <Select value={editForm.familyRole} onValueChange={v => setEditForm({ ...editForm, familyRole: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FAMILY_ROLES.map(r => (
+                    <SelectItem key={r} value={r}>{familyRoleLabels[r] || r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>{t.admin.permission}</Label>
+              <Select value={editForm.role} onValueChange={v => setEditForm({ ...editForm, role: v as "admin" | "viewer" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">{t.admin.adminRole}</SelectItem>
+                  <SelectItem value="viewer">{t.admin.viewerRole}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              disabled={!editTarget || updateMemberMutation.isPending}
+              onClick={() => editTarget && updateMemberMutation.mutate({
+                userId: editTarget.user_id,
+                email: editForm.email,
+                firstName: editForm.firstName,
+                lastName: editForm.lastName,
+                familyRole: editForm.familyRole,
+                role: editForm.role,
+              })}
+            >
+              {updateMemberMutation.isPending ? "Mise à jour..." : "Enregistrer"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {deleteTarget?.name} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Le compte utilisateur et son profil seront définitivement supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteMemberMutation.mutate(deleteTarget.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
