@@ -11,8 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Users, Shield, ShieldCheck, KeyRound } from "lucide-react";
+import { Plus, Users, Shield, ShieldCheck, KeyRound, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PermissionsManager } from "@/components/PermissionsManager";
 
