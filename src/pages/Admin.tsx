@@ -257,17 +257,40 @@ export default function Admin() {
                       <TableCell>{format(new Date(member.created_at), "dd/MM/yyyy")}</TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setPwTarget({ id: member.user_id, name: `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email });
-                              setNewPassword("");
-                              setPwOpen(true);
-                            }}
-                          >
-                            <KeyRound className="w-4 h-4 mr-1" />Mot de passe
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost" size="icon" title="Modifier"
+                              onClick={() => {
+                                setEditTarget(member);
+                                setEditForm({
+                                  firstName: member.first_name ?? "",
+                                  lastName: member.last_name ?? "",
+                                  email: member.email ?? "",
+                                  familyRole: member.family_role ?? "son",
+                                  role: (member.role === "admin" ? "admin" : "viewer"),
+                                });
+                                setEditOpen(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" title="Mot de passe"
+                              onClick={() => {
+                                setPwTarget({ id: member.user_id, name: `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email });
+                                setNewPassword("");
+                                setPwOpen(true);
+                              }}
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon" title="Supprimer"
+                              onClick={() => setDeleteTarget({ id: member.user_id, name: `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email })}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>
