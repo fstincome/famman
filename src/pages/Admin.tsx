@@ -33,6 +33,10 @@ export default function Admin() {
   const [pwOpen, setPwOpen] = useState(false);
   const [pwTarget, setPwTarget] = useState<{ id: string; name: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", email: "", familyRole: "son", role: "viewer" as "admin" | "viewer" });
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [form, setForm] = useState({
     email: "", password: "", firstName: "", lastName: "",
     role: "viewer" as "admin" | "viewer",
