@@ -156,51 +156,54 @@ export default function Overview() {
 
   const isLoading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8;
 
-  // Smart notifications (persist to DB once per session)
+  // Smart notifications — dedupe via DB, no email spam
   useEffect(() => {
     if (isLoading || notificationsGenerated || !companyId) return;
     setNotificationsGenerated(true);
     const today = new Date();
 
-    const notifications: Array<{ activity: { action: string; entity_type: string; entity_name?: string }; notif: { title: string; message: string; type: "warning" | "error" | "info" | "success" } }> = [];
+    const candidates: Array<{ title: string; message: string; type: "warning" | "error" | "info" | "success" }> = [];
 
     debts.forEach(d => {
-      if (d.due_date) {
-        const daysLeft = differenceInDays(new Date(d.due_date), today);
-        if (daysLeft >= 0 && daysLeft <= 7) {
-          notifications.push({
-            activity: { action: "alert", entity_type: "debt", entity_name: d.name },
-            notif: { title: "⏰ Échéance dette proche", message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} dans ${daysLeft} jours`, type: "warning" },
-          });
-        }
-        if (daysLeft < 0) {
-          notifications.push({
-            activity: { action: "alert", entity_type: "debt", entity_name: d.name },
-            notif: { title: "🚨 Dette en retard", message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} (${Math.abs(daysLeft)} jours de retard)`, type: "error" },
-          });
-        }
+      if (!d.due_date) return;
+      const daysLeft = differenceInDays(new Date(d.due_date), today);
+      if (daysLeft >= 0 && daysLeft <= 7) {
+        candidates.push({ title: "⏰ Échéance dette proche", message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} dans ${daysLeft} jours`, type: "warning" });
+      } else if (daysLeft < 0) {
+        candidates.push({ title: "🚨 Dette en retard", message: `${d.name} — ${formatBIF(Number(d.remaining_balance))} (${Math.abs(daysLeft)} jours de retard)`, type: "error" });
       }
     });
 
     needs.filter(n => n.status === "validated").forEach(n => {
-      notifications.push({
-        activity: { action: "alert", entity_type: "need", entity_name: n.title },
-        notif: { title: "✅ Besoin validé à acheter", message: `${n.title} — ${formatBIF(Number(n.estimated_price))}`, type: "info" },
-      });
+      candidates.push({ title: "✅ Besoin validé à acheter", message: `${n.title} — ${formatBIF(Number(n.estimated_price))}`, type: "info" });
     });
 
     envelopes.forEach(e => {
       if (Number(e.allocated_amount) > 0 && Number(e.spent_amount) > Number(e.allocated_amount)) {
-        notifications.push({
-          activity: { action: "alert", entity_type: "budget", entity_name: e.subcategory },
-          notif: { title: "⚠️ Budget dépassé", message: `${e.subcategory}: ${formatBIF(Number(e.spent_amount))} / ${formatBIF(Number(e.allocated_amount))}`, type: "error" },
-        });
+        candidates.push({ title: "⚠️ Budget dépassé", message: `${e.subcategory}: ${formatBIF(Number(e.spent_amount))} / ${formatBIF(Number(e.allocated_amount))}`, type: "error" });
       }
     });
 
-    // Fire all in parallel (fire-and-forget)
-    notifications.forEach(n => logAndNotify(n.activity, n.notif));
+    if (candidates.length === 0) return;
+
+    // Dedupe: only insert reminders that don't already exist (same title+message) in last 24h
+    (async () => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: existing } = await supabase
+        .from("notifications")
+        .select("title,message")
+        .eq("company_id", companyId)
+        .gte("created_at", since);
+      const seen = new Set((existing || []).map((n: any) => `${n.title}|${n.message}`));
+      const toInsert = candidates
+        .filter(c => !seen.has(`${c.title}|${c.message}`))
+        .map(c => ({ company_id: companyId, title: c.title, message: c.message, type: c.type }));
+      if (toInsert.length > 0) {
+        await supabase.from("notifications").insert(toInsert as any);
+      }
+    })();
   }, [isLoading, notificationsGenerated, debts, needs, envelopes, companyId]);
+
 
   if (isLoading) {
     return (
