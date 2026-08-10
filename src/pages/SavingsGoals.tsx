@@ -348,12 +348,67 @@ export default function SavingsGoals() {
         </Card>
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6 flex flex-wrap gap-3 items-center">
+          <Input
+            placeholder="Rechercher un objectif..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full sm:w-64"
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Statut" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              {Object.entries(statusConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Priorité" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes priorités</SelectItem>
+              {Object.entries(priorityConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[190px]"><SelectValue placeholder="Catégorie" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes catégories</SelectItem>
+              {categories.map(c => <SelectItem key={c.v} value={c.v}>{c.l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[190px]"><SelectValue placeholder="Trier par" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="priority">Trier : priorité</SelectItem>
+              <SelectItem value="progress">Trier : progression</SelectItem>
+              <SelectItem value="target_date">Trier : échéance</SelectItem>
+              <SelectItem value="amount">Trier : montant cible</SelectItem>
+              <SelectItem value="created">Trier : plus récents</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{visibleGoals.length} / {goals.length} objectif(s)</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setSearch(""); setStatusFilter("all"); setPriorityFilter("all"); setCategoryFilter("all"); setSortBy("priority"); }}
+            >
+              Réinitialiser
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Goals cards with visual progress */}
-      {goals.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">Aucun objectif d'épargne pour le moment</CardContent></Card>
+      {visibleGoals.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground">
+          {goals.length === 0 ? "Aucun objectif d'épargne pour le moment" : "Aucun objectif ne correspond aux filtres"}
+        </CardContent></Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {goals.map(goal => {
+          {visibleGoals.map(goal => {
             const target = Number(goal.target_amount);
             const current = Number(goal.current_amount);
             const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
