@@ -262,8 +262,34 @@ export default function SavingsGoals() {
   const globalPct = totalTarget > 0 ? Math.min(100, (totalSaved / totalTarget) * 100) : 0;
   const activeCount = goals.filter(g => g.status === "active").length;
 
+  const visibleGoals = goals
+    .filter(g => statusFilter === "all" || g.status === statusFilter)
+    .filter(g => priorityFilter === "all" || (g.priority || "medium") === priorityFilter)
+    .filter(g => categoryFilter === "all" || g.category === categoryFilter)
+    .filter(g => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return g.name.toLowerCase().includes(q) || (g.description || "").toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      if (sortBy === "priority") {
+        return (priorityConfig[a.priority || "medium"]?.rank ?? 2) - (priorityConfig[b.priority || "medium"]?.rank ?? 2);
+      }
+      if (sortBy === "progress") {
+        const pa = Number(a.target_amount) > 0 ? Number(a.current_amount) / Number(a.target_amount) : 0;
+        const pb = Number(b.target_amount) > 0 ? Number(b.current_amount) / Number(b.target_amount) : 0;
+        return pb - pa;
+      }
+      if (sortBy === "target_date") {
+        return (a.target_date || "9999").localeCompare(b.target_date || "9999");
+      }
+      if (sortBy === "amount") return Number(b.target_amount) - Number(a.target_amount);
+      return b.created_at.localeCompare(a.created_at);
+    });
+
   const filteredContributions =
     selectedGoalId === "all" ? contributions : contributions.filter(c => c.goal_id === selectedGoalId);
+
 
   const goalName = (id: string) => goals.find(g => g.id === id)?.name || "—";
 
