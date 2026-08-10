@@ -2540,6 +2540,113 @@ export type Database = {
         }
         Relationships: []
       }
+      savings_contributions: {
+        Row: {
+          amount: number
+          company_id: string
+          contributor: string | null
+          created_at: string
+          date: string
+          goal_id: string
+          id: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          contributor?: string | null
+          created_at?: string
+          date?: string
+          goal_id: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          contributor?: string | null
+          created_at?: string
+          date?: string
+          goal_id?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_contributions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      savings_goals: {
+        Row: {
+          category: string
+          color: string | null
+          company_id: string
+          created_at: string
+          currency: string
+          current_amount: number
+          description: string | null
+          id: string
+          name: string
+          status: string
+          target_amount: number
+          target_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          color?: string | null
+          company_id: string
+          created_at?: string
+          currency?: string
+          current_amount?: number
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          target_amount?: number
+          target_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          currency?: string
+          current_amount?: number
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          target_amount?: number
+          target_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_goals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_reports: {
         Row: {
           company_id: string
