@@ -25,6 +25,7 @@ type Goal = {
   target_date: string | null;
   category: string;
   status: string;
+  priority: string;
   created_at: string;
 };
 
