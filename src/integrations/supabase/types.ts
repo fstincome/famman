@@ -2602,6 +2602,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          priority: string
           status: string
           target_amount: number
           target_date: string | null
@@ -2617,6 +2618,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          priority?: string
           status?: string
           target_amount?: number
           target_date?: string | null
@@ -2632,6 +2634,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          priority?: string
           status?: string
           target_amount?: number
           target_date?: string | null
