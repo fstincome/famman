@@ -25,6 +25,7 @@ type Goal = {
   target_date: string | null;
   category: string;
   status: string;
+  priority: string;
   created_at: string;
 };
 
@@ -56,6 +57,13 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   cancelled: { label: "Annulé", color: "bg-muted text-muted-foreground" },
 };
 
+const priorityConfig: Record<string, { label: string; color: string; rank: number }> = {
+  urgent: { label: "🔴 Urgente", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200", rank: 0 },
+  high: { label: "🟠 Haute", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200", rank: 1 },
+  medium: { label: "🟡 Moyenne", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200", rank: 2 },
+  low: { label: "🟢 Basse", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", rank: 3 },
+};
+
 const defaultGoalForm = {
   name: "",
   description: "",
@@ -63,6 +71,7 @@ const defaultGoalForm = {
   target_date: "",
   category: "general",
   status: "active",
+  priority: "medium",
 };
 
 const defaultContribForm = {
@@ -82,6 +91,11 @@ export default function SavingsGoals() {
   const [contribGoal, setContribGoal] = useState<Goal | null>(null);
   const [contribForm, setContribForm] = useState(defaultContribForm);
   const [selectedGoalId, setSelectedGoalId] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<string>("priority");
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -127,6 +141,7 @@ export default function SavingsGoals() {
         target_amount: values.target_amount,
         target_date: values.target_date || null,
         category: values.category,
+        priority: values.priority,
         status: values.status,
         currency: "BIF",
         company_id: profile?.company_id,
@@ -237,6 +252,7 @@ export default function SavingsGoals() {
       target_date: goal.target_date || "",
       category: goal.category,
       status: goal.status,
+      priority: goal.priority || "medium",
     });
     setGoalDialogOpen(true);
   };
@@ -252,8 +268,34 @@ export default function SavingsGoals() {
   const globalPct = totalTarget > 0 ? Math.min(100, (totalSaved / totalTarget) * 100) : 0;
   const activeCount = goals.filter(g => g.status === "active").length;
 
+  const visibleGoals = goals
+    .filter(g => statusFilter === "all" || g.status === statusFilter)
+    .filter(g => priorityFilter === "all" || (g.priority || "medium") === priorityFilter)
+    .filter(g => categoryFilter === "all" || g.category === categoryFilter)
+    .filter(g => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return g.name.toLowerCase().includes(q) || (g.description || "").toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      if (sortBy === "priority") {
+        return (priorityConfig[a.priority || "medium"]?.rank ?? 2) - (priorityConfig[b.priority || "medium"]?.rank ?? 2);
+      }
+      if (sortBy === "progress") {
+        const pa = Number(a.target_amount) > 0 ? Number(a.current_amount) / Number(a.target_amount) : 0;
+        const pb = Number(b.target_amount) > 0 ? Number(b.current_amount) / Number(b.target_amount) : 0;
+        return pb - pa;
+      }
+      if (sortBy === "target_date") {
+        return (a.target_date || "9999").localeCompare(b.target_date || "9999");
+      }
+      if (sortBy === "amount") return Number(b.target_amount) - Number(a.target_amount);
+      return b.created_at.localeCompare(a.created_at);
+    });
+
   const filteredContributions =
     selectedGoalId === "all" ? contributions : contributions.filter(c => c.goal_id === selectedGoalId);
+
 
   const goalName = (id: string) => goals.find(g => g.id === id)?.name || "—";
 
@@ -306,12 +348,67 @@ export default function SavingsGoals() {
         </Card>
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6 flex flex-wrap gap-3 items-center">
+          <Input
+            placeholder="Rechercher un objectif..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full sm:w-64"
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Statut" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              {Object.entries(statusConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Priorité" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes priorités</SelectItem>
+              {Object.entries(priorityConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[190px]"><SelectValue placeholder="Catégorie" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes catégories</SelectItem>
+              {categories.map(c => <SelectItem key={c.v} value={c.v}>{c.l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[190px]"><SelectValue placeholder="Trier par" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="priority">Trier : priorité</SelectItem>
+              <SelectItem value="progress">Trier : progression</SelectItem>
+              <SelectItem value="target_date">Trier : échéance</SelectItem>
+              <SelectItem value="amount">Trier : montant cible</SelectItem>
+              <SelectItem value="created">Trier : plus récents</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{visibleGoals.length} / {goals.length} objectif(s)</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setSearch(""); setStatusFilter("all"); setPriorityFilter("all"); setCategoryFilter("all"); setSortBy("priority"); }}
+            >
+              Réinitialiser
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Goals cards with visual progress */}
-      {goals.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">Aucun objectif d'épargne pour le moment</CardContent></Card>
+      {visibleGoals.length === 0 ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground">
+          {goals.length === 0 ? "Aucun objectif d'épargne pour le moment" : "Aucun objectif ne correspond aux filtres"}
+        </CardContent></Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {goals.map(goal => {
+          {visibleGoals.map(goal => {
             const target = Number(goal.target_amount);
             const current = Number(goal.current_amount);
             const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
@@ -328,7 +425,12 @@ export default function SavingsGoals() {
                         {goal.target_date && ` • échéance ${new Date(goal.target_date).toLocaleDateString("fr-FR")}`}
                       </p>
                     </div>
-                    <Badge className={stat.color}>{stat.label}</Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className={stat.color}>{stat.label}</Badge>
+                      <Badge variant="outline" className={priorityConfig[goal.priority || "medium"]?.color}>
+                        {priorityConfig[goal.priority || "medium"]?.label}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3 flex-1 flex flex-col">
@@ -424,6 +526,15 @@ export default function SavingsGoals() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {categories.map(c => <SelectItem key={c.v} value={c.v}>{c.l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Priorité</Label>
+              <Select value={goalForm.priority} onValueChange={v => setGoalForm({ ...goalForm, priority: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(priorityConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
