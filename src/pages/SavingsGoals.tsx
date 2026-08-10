@@ -91,6 +91,11 @@ export default function SavingsGoals() {
   const [contribGoal, setContribGoal] = useState<Goal | null>(null);
   const [contribForm, setContribForm] = useState(defaultContribForm);
   const [selectedGoalId, setSelectedGoalId] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<string>("priority");
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
