@@ -370,7 +370,12 @@ export default function SavingsGoals() {
                         {goal.target_date && ` • échéance ${new Date(goal.target_date).toLocaleDateString("fr-FR")}`}
                       </p>
                     </div>
-                    <Badge className={stat.color}>{stat.label}</Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className={stat.color}>{stat.label}</Badge>
+                      <Badge variant="outline" className={priorityConfig[goal.priority || "medium"]?.color}>
+                        {priorityConfig[goal.priority || "medium"]?.label}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3 flex-1 flex flex-col">
