@@ -29,6 +29,7 @@ import FamilyCalendar from "./pages/FamilyCalendar";
 import RecurringTransactions from "./pages/RecurringTransactions";
 import FamilyMembers from "./pages/FamilyMembers";
 import Comparisons from "./pages/Comparisons";
+import SavingsGoals from "./pages/SavingsGoals";
 
 const queryClient = new QueryClient();
 
