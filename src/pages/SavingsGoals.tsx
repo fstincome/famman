@@ -246,6 +246,7 @@ export default function SavingsGoals() {
       target_date: goal.target_date || "",
       category: goal.category,
       status: goal.status,
+      priority: goal.priority || "medium",
     });
     setGoalDialogOpen(true);
   };
