@@ -141,6 +141,7 @@ export default function SavingsGoals() {
         target_amount: values.target_amount,
         target_date: values.target_date || null,
         category: values.category,
+        priority: values.priority,
         status: values.status,
         currency: "BIF",
         company_id: profile?.company_id,
