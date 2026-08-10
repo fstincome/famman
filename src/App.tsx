@@ -29,6 +29,7 @@ import FamilyCalendar from "./pages/FamilyCalendar";
 import RecurringTransactions from "./pages/RecurringTransactions";
 import FamilyMembers from "./pages/FamilyMembers";
 import Comparisons from "./pages/Comparisons";
+import SavingsGoals from "./pages/SavingsGoals";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/health" element={<DashboardLayout><Health /></DashboardLayout>} />
               <Route path="/calendar" element={<DashboardLayout><FamilyCalendar /></DashboardLayout>} />
               <Route path="/recurring" element={<DashboardLayout><RecurringTransactions /></DashboardLayout>} />
+              <Route path="/savings" element={<DashboardLayout><SavingsGoals /></DashboardLayout>} />
               <Route path="/comparisons" element={<DashboardLayout><Comparisons /></DashboardLayout>} />
               <Route path="/reports" element={<DashboardLayout><Reports /></DashboardLayout>} />
               <Route path="/admin" element={<DashboardLayout><Admin /></DashboardLayout>} />
