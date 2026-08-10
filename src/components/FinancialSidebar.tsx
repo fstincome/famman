@@ -21,6 +21,7 @@ export function FinancialSidebar() {
     { title: t.nav.income, url: "/income", icon: TrendingUp },
     { title: t.nav.expenses, url: "/expenses", icon: Receipt },
     { title: t.nav.statistics, url: "/statistics", icon: BarChart3 },
+    { title: "Épargne", url: "/savings", icon: PiggyBank },
     { title: "Comparaisons", url: "/comparisons", icon: ArrowLeftRight },
     { title: t.nav.patrimony, url: "/patrimony", icon: Building2 },
     { title: t.nav.events, url: "/events", icon: Calendar },
