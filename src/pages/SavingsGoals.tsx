@@ -529,6 +529,15 @@ export default function SavingsGoals() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Priorité</Label>
+              <Select value={goalForm.priority} onValueChange={v => setGoalForm({ ...goalForm, priority: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(priorityConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             {editingGoal && (
               <div>
                 <Label>Statut</Label>
