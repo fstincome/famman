@@ -57,6 +57,13 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   cancelled: { label: "Annulé", color: "bg-muted text-muted-foreground" },
 };
 
+const priorityConfig: Record<string, { label: string; color: string; rank: number }> = {
+  urgent: { label: "🔴 Urgente", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200", rank: 0 },
+  high: { label: "🟠 Haute", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200", rank: 1 },
+  medium: { label: "🟡 Moyenne", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200", rank: 2 },
+  low: { label: "🟢 Basse", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", rank: 3 },
+};
+
 const defaultGoalForm = {
   name: "",
   description: "",
@@ -64,6 +71,7 @@ const defaultGoalForm = {
   target_date: "",
   category: "general",
   status: "active",
+  priority: "medium",
 };
 
 const defaultContribForm = {
