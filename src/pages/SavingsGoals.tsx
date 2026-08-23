@@ -602,6 +602,21 @@ export default function SavingsGoals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Goal detail drawer */}
+      <SavingsGoalDetail
+        goal={goals.find(g => g.id === detailGoalId) || null}
+        contributions={contributions}
+        categoryLabel={
+          categories.find(c => c.v === goals.find(g => g.id === detailGoalId)?.category)?.l || "Général"
+        }
+        statusBadge={statusConfig[goals.find(g => g.id === detailGoalId)?.status || "active"] || statusConfig.active}
+        priorityBadge={priorityConfig[goals.find(g => g.id === detailGoalId)?.priority || "medium"] || priorityConfig.medium}
+        onClose={() => setDetailGoalId(null)}
+        onContribute={(g) => { setContribGoal(g as Goal); setContribForm(defaultContribForm); }}
+        onEdit={(g) => { setDetailGoalId(null); openEdit(g as Goal); }}
+        onDeleteContribution={(c) => deleteContribution.mutate(c as Contribution)}
+      />
     </div>
   );
 }
