@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DataTable, DataTableColumn } from "@/components/DataTable";
-import { Plus, PiggyBank, Target, TrendingUp, Trash2, Edit, HandCoins } from "lucide-react";
+import { SavingsGoalDetail } from "@/components/SavingsGoalDetail";
+import { Plus, PiggyBank, Target, TrendingUp, Trash2, Edit, HandCoins, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { logAndNotify } from "@/hooks/useActivityLogger";
 
