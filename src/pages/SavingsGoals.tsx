@@ -97,6 +97,7 @@ export default function SavingsGoals() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<string>("priority");
+  const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
