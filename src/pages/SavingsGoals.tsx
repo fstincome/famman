@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DataTable, DataTableColumn } from "@/components/DataTable";
-import { Plus, PiggyBank, Target, TrendingUp, Trash2, Edit, HandCoins } from "lucide-react";
+import { SavingsGoalDetail } from "@/components/SavingsGoalDetail";
+import { Plus, PiggyBank, Target, TrendingUp, Trash2, Edit, HandCoins, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { logAndNotify } from "@/hooks/useActivityLogger";
 
@@ -96,6 +97,7 @@ export default function SavingsGoals() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<string>("priority");
+  const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -447,6 +449,9 @@ export default function SavingsGoals() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-auto pt-2">
+                    <Button size="sm" variant="secondary" className="flex-1" onClick={() => setDetailGoalId(goal.id)}>
+                      <Eye className="w-4 h-4 mr-1" />Détails
+                    </Button>
                     <Button size="sm" className="flex-1" onClick={() => { setContribGoal(goal); setContribForm(defaultContribForm); }}>
                       <HandCoins className="w-4 h-4 mr-1" />Contribuer
                     </Button>
@@ -597,6 +602,21 @@ export default function SavingsGoals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Goal detail drawer */}
+      <SavingsGoalDetail
+        goal={goals.find(g => g.id === detailGoalId) || null}
+        contributions={contributions}
+        categoryLabel={
+          categories.find(c => c.v === goals.find(g => g.id === detailGoalId)?.category)?.l || "Général"
+        }
+        statusBadge={statusConfig[goals.find(g => g.id === detailGoalId)?.status || "active"] || statusConfig.active}
+        priorityBadge={priorityConfig[goals.find(g => g.id === detailGoalId)?.priority || "medium"] || priorityConfig.medium}
+        onClose={() => setDetailGoalId(null)}
+        onContribute={(g) => { setContribGoal(g as Goal); setContribForm(defaultContribForm); }}
+        onEdit={(g) => { setDetailGoalId(null); openEdit(g as Goal); }}
+        onDeleteContribution={(c) => deleteContribution.mutate(c as Contribution)}
+      />
     </div>
   );
 }
