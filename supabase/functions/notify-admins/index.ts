@@ -158,7 +158,13 @@ Deno.serve(async (req) => {
       .eq("company_id", callerProfile.company_id)
       .eq("role", "admin");
 
-    const adminList = (admins || []).filter((a) => a.email);
+    // Destinataire principal : un seul administrateur reçoit les notifications.
+    const PRIMARY_ADMIN_EMAIL = "advaxe.mucatcha@gmail.com";
+    const allAdmins = (admins || []).filter((a) => a.email);
+    const primary = allAdmins.filter(
+      (a) => a.email!.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL,
+    );
+    const adminList = primary.length > 0 ? primary : [];
     if (adminList.length === 0) {
       return new Response(JSON.stringify({ success: true, skipped: "no admins" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
