@@ -449,6 +449,9 @@ export default function SavingsGoals() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-auto pt-2">
+                    <Button size="sm" variant="secondary" className="flex-1" onClick={() => setDetailGoalId(goal.id)}>
+                      <Eye className="w-4 h-4 mr-1" />Détails
+                    </Button>
                     <Button size="sm" className="flex-1" onClick={() => { setContribGoal(goal); setContribForm(defaultContribForm); }}>
                       <HandCoins className="w-4 h-4 mr-1" />Contribuer
                     </Button>
