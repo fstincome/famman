@@ -283,16 +283,16 @@ export default function Applications() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { icon: Send, label: "Total soumis", value: applications.length, color: "blue" },
-          { icon: Clock, label: "En attente de réponse", value: pendingCount, color: "yellow" },
-          { icon: CheckCircle2, label: "Acceptées", value: count("accepted"), color: "green" },
-          { icon: XCircle, label: "Refusées", value: count("rejected"), color: "red" },
+          { icon: Send, label: "Total soumis", value: applications.length, wrap: "bg-blue-100 dark:bg-blue-900", ic: "text-blue-600" },
+          { icon: Clock, label: "En attente de réponse", value: pendingCount, wrap: "bg-yellow-100 dark:bg-yellow-900", ic: "text-yellow-600" },
+          { icon: CheckCircle2, label: "Acceptées", value: count("accepted"), wrap: "bg-green-100 dark:bg-green-900", ic: "text-green-600" },
+          { icon: XCircle, label: "Refusées", value: count("rejected"), wrap: "bg-red-100 dark:bg-red-900", ic: "text-red-600" },
         ].map(s => (
           <Card key={s.label}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg bg-${s.color}-100 dark:bg-${s.color}-900`}>
-                  <s.icon className={`w-5 h-5 text-${s.color}-600`} />
+                <div className={`p-2 rounded-lg ${s.wrap}`}>
+                  <s.icon className={`w-5 h-5 ${s.ic}`} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">{s.label}</p>
