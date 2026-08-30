@@ -30,6 +30,7 @@ import RecurringTransactions from "./pages/RecurringTransactions";
 import FamilyMembers from "./pages/FamilyMembers";
 import Comparisons from "./pages/Comparisons";
 import SavingsGoals from "./pages/SavingsGoals";
+import Applications from "./pages/Applications";
 
 const queryClient = new QueryClient();
 
