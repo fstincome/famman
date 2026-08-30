@@ -60,6 +60,7 @@ const App = () => (
               <Route path="/recurring" element={<DashboardLayout><RecurringTransactions /></DashboardLayout>} />
               <Route path="/savings" element={<DashboardLayout><SavingsGoals /></DashboardLayout>} />
               <Route path="/comparisons" element={<DashboardLayout><Comparisons /></DashboardLayout>} />
+              <Route path="/applications" element={<DashboardLayout><Applications /></DashboardLayout>} />
               <Route path="/reports" element={<DashboardLayout><Reports /></DashboardLayout>} />
               <Route path="/admin" element={<DashboardLayout><Admin /></DashboardLayout>} />
               <Route path="/profitability" element={<DashboardLayout><Profitability /></DashboardLayout>} />

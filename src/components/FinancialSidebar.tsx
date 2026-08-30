@@ -33,6 +33,7 @@ export function FinancialSidebar() {
     { title: t.nav.needs, url: "/needs", icon: ClipboardList },
     { title: t.nav.health, url: "/health", icon: Heart },
     { title: "Récurrences", url: "/recurring", icon: Repeat },
+    { title: "Candidatures", url: "/applications", icon: FileCheck },
     { title: t.nav.calendar, url: "/calendar", icon: CalendarDays },
     { title: t.nav.reports, url: "/reports", icon: FileText },
   ];
