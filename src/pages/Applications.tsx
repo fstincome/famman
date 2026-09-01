@@ -377,17 +377,76 @@ export default function Applications() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Filter className="w-4 h-4" />Filtres avancés
+            </div>
+            <div>
+              <Label className="text-xs">Soumis du</Label>
+              <Input type="date" className="h-9 w-[160px]" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">au</Label>
+              <Input type="date" className="h-9 w-[160px]" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Deadline</Label>
+              <Select value={deadlineFilter} onValueChange={setDeadlineFilter}>
+                <SelectTrigger className="h-9 w-[190px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les deadlines</SelectItem>
+                  <SelectItem value="soon">⏳ Deadline proche (≤ 14 j)</SelectItem>
+                  <SelectItem value="overdue">⚠️ En retard</SelectItem>
+                  <SelectItem value="later">📅 Plus tard</SelectItem>
+                  <SelectItem value="none">— Sans deadline</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Soumis au nom de</Label>
+              <Select value={applicantFilter} onValueChange={setApplicantFilter}>
+                <SelectTrigger className="h-9 w-[200px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="self">À titre personnel</SelectItem>
+                  {applicantOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Trier par</Label>
+              <Select value={sortMode} onValueChange={setSortMode}>
+                <SelectTrigger className="h-9 w-[200px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="submission_desc">Soumission (récent)</SelectItem>
+                  <SelectItem value="submission_asc">Soumission (ancien)</SelectItem>
+                  <SelectItem value="deadline_asc">Deadline la plus proche</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {advancedActive && (
+              <Button variant="ghost" size="sm" onClick={resetAdvanced}>
+                <RotateCcw className="w-4 h-4 mr-1" />Réinitialiser
+              </Button>
+            )}
+          </div>
           <DataTable
-            data={filtered}
+            data={sortedData}
             columns={[
               {
                 key: "title", header: "Titre", render: (a) => (
                   <div>
                     <p className="font-medium">{a.title}</p>
                     {a.organization && <p className="text-xs text-muted-foreground">{a.organization}</p>}
+                    <p className="text-xs text-muted-foreground">
+                      {a.applicant_type === "self" ? "Personnel" : `${applicantTypeConfig[a.applicant_type]?.short || ""}: ${a.applicant_name || "—"}`}
+                    </p>
                   </div>
                 ),
+                getValue: (a) => `${a.title} ${a.organization || ""} ${a.applicant_name || ""}`,
+              },
+
               },
               { key: "submission_date", header: "Soumission", render: (a) => new Date(a.submission_date).toLocaleDateString("fr-FR"), getValue: (a) => a.submission_date },
               {
