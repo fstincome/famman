@@ -82,8 +82,9 @@ export default function Applications() {
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [posterModal, setPosterModal] = useState<{ url: string; title: string } | null>(null);
   const [uploading, setUploading] = useState(false);
-
+  const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
   const [deadlineFilter, setDeadlineFilter] = useState("all");
   const [applicantFilter, setApplicantFilter] = useState("all");
   const [sortMode, setSortMode] = useState("submission_desc");
