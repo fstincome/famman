@@ -506,6 +506,28 @@ export default function Applications() {
               <Label>Organisme / Institution</Label>
               <Input placeholder="Ex: Université de Nairobi" value={form.organization} onChange={e => setForm({ ...form, organization: e.target.value })} />
             </div>
+            <div>
+              <Label>Je soumets *</Label>
+              <Select value={form.applicant_type} onValueChange={v => setForm({ ...form, applicant_type: v, applicant_name: v === "self" ? "" : form.applicant_name })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(applicantTypeConfig).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {form.applicant_type !== "self" && (
+              <div>
+                <Label>{form.applicant_type === "company" ? "Nom de l'entreprise *" : "Nom de l'organisation *"}</Label>
+                <Input
+                  placeholder={form.applicant_type === "company" ? "Ex: SIGHT Africa SARL" : "Ex: Association Umoja"}
+                  value={form.applicant_name}
+                  onChange={e => setForm({ ...form, applicant_name: e.target.value })}
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Date de soumission *</Label>
