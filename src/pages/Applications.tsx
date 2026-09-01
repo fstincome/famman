@@ -446,8 +446,6 @@ export default function Applications() {
                 ),
                 getValue: (a) => `${a.title} ${a.organization || ""} ${a.applicant_name || ""}`,
               },
-
-              },
               { key: "submission_date", header: "Soumission", render: (a) => new Date(a.submission_date).toLocaleDateString("fr-FR"), getValue: (a) => a.submission_date },
               {
                 key: "deadline", header: "Deadline", getValue: (a) => a.deadline || "",
