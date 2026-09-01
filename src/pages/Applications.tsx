@@ -24,11 +24,19 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   expired: { label: "Expiré / Sans réponse", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200" },
 };
 
+const applicantTypeConfig: Record<string, { label: string; short: string }> = {
+  self: { label: "À titre personnel (moi-même)", short: "Personnel" },
+  organization: { label: "Au nom d'une organisation", short: "Organisation" },
+  company: { label: "Au nom d'une entreprise", short: "Entreprise" },
+};
+
 type Application = {
   id: string;
   company_id: string;
   title: string;
   organization: string | null;
+  applicant_type: string;
+  applicant_name: string | null;
   submission_date: string;
   deadline: string | null;
   status: string;
@@ -50,12 +58,15 @@ type AppDoc = {
 const defaultForm = {
   title: "",
   organization: "",
+  applicant_type: "self",
+  applicant_name: "",
   submission_date: new Date().toISOString().slice(0, 10),
   deadline: "",
   status: "submitted",
   result_note: "",
   description: "",
 };
+
 
 export default function Applications() {
   const queryClient = useQueryClient();
