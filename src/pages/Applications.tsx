@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DataTable, DataTableColumn } from "@/components/DataTable";
-import { Plus, Trash2, Edit, FileText, Eye, Upload, Download, CheckCircle2, Clock, XCircle, Send } from "lucide-react";
+import { Plus, Trash2, Edit, FileText, Eye, Upload, Download, CheckCircle2, Clock, XCircle, Send, Filter, RotateCcw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { logAndNotify } from "@/hooks/useActivityLogger";
 
