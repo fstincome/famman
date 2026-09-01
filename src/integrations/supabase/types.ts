@@ -203,6 +203,8 @@ export type Database = {
       }
       applications: {
         Row: {
+          applicant_name: string | null
+          applicant_type: string
           company_id: string
           created_at: string
           deadline: string | null
@@ -216,6 +218,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          applicant_name?: string | null
+          applicant_type?: string
           company_id: string
           created_at?: string
           deadline?: string | null
@@ -229,6 +233,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          applicant_name?: string | null
+          applicant_type?: string
           company_id?: string
           created_at?: string
           deadline?: string | null

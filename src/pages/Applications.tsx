@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DataTable, DataTableColumn } from "@/components/DataTable";
-import { Plus, Trash2, Edit, FileText, Eye, Upload, Download, CheckCircle2, Clock, XCircle, Send } from "lucide-react";
+import { Plus, Trash2, Edit, FileText, Eye, Upload, Download, CheckCircle2, Clock, XCircle, Send, Filter, RotateCcw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { logAndNotify } from "@/hooks/useActivityLogger";
 
@@ -24,11 +24,19 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   expired: { label: "Expiré / Sans réponse", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200" },
 };
 
+const applicantTypeConfig: Record<string, { label: string; short: string }> = {
+  self: { label: "À titre personnel (moi-même)", short: "Personnel" },
+  organization: { label: "Au nom d'une organisation", short: "Organisation" },
+  company: { label: "Au nom d'une entreprise", short: "Entreprise" },
+};
+
 type Application = {
   id: string;
   company_id: string;
   title: string;
   organization: string | null;
+  applicant_type: string;
+  applicant_name: string | null;
   submission_date: string;
   deadline: string | null;
   status: string;
@@ -50,12 +58,15 @@ type AppDoc = {
 const defaultForm = {
   title: "",
   organization: "",
+  applicant_type: "self",
+  applicant_name: "",
   submission_date: new Date().toISOString().slice(0, 10),
   deadline: "",
   status: "submitted",
   result_note: "",
   description: "",
 };
+
 
 export default function Applications() {
   const queryClient = useQueryClient();
@@ -66,6 +77,12 @@ export default function Applications() {
   const [detail, setDetail] = useState<Application | null>(null);
   const [preview, setPreview] = useState<{ url: string; doc: AppDoc } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [deadlineFilter, setDeadlineFilter] = useState("all");
+  const [applicantFilter, setApplicantFilter] = useState("all");
+  const [sortMode, setSortMode] = useState("submission_desc");
+
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -121,8 +138,11 @@ export default function Applications() {
       const payload: any = {
         title: values.title,
         organization: values.organization || null,
+        applicant_type: values.applicant_type,
+        applicant_name: values.applicant_type === "self" ? null : values.applicant_name || null,
         submission_date: values.submission_date,
         deadline: values.deadline || null,
+
         status: values.status,
         result_note: values.result_note || null,
         description: values.description || null,
@@ -252,12 +272,15 @@ export default function Applications() {
     setForm({
       title: app.title,
       organization: app.organization || "",
+      applicant_type: app.applicant_type || "self",
+      applicant_name: app.applicant_name || "",
       submission_date: app.submission_date,
       deadline: app.deadline || "",
       status: app.status,
       result_note: app.result_note || "",
       description: app.description || "",
     });
+
     setDialogOpen(true);
   };
 
@@ -267,8 +290,50 @@ export default function Applications() {
     setDialogOpen(true);
   };
 
-  const filtered = filter === "all" ? applications : applications.filter(a => a.status === filter);
+  
+  const deadlineStatus = (a: Application) => {
+    if (!a.deadline) return "none";
+    const days = Math.ceil((new Date(a.deadline).getTime() - Date.now()) / 86400000);
+    if (days < 0) return "overdue";
+    if (days <= 14) return "soon";
+    return "later";
+  };
+
+  const applicantOptions = Array.from(
+    new Set(applications.filter(a => a.applicant_type !== "self" && a.applicant_name).map(a => a.applicant_name as string))
+  ).sort();
+
+  const filtered = applications.filter(a => {
+    if (filter !== "all" && a.status !== filter) return false;
+    if (dateFrom && a.submission_date < dateFrom) return false;
+    if (dateTo && a.submission_date > dateTo) return false;
+    if (deadlineFilter !== "all" && deadlineStatus(a) !== deadlineFilter) return false;
+    if (applicantFilter === "self" && a.applicant_type !== "self") return false;
+    if (applicantFilter !== "all" && applicantFilter !== "self" && a.applicant_name !== applicantFilter) return false;
+    return true;
+  });
+
+  const sortedData = [...filtered].sort((a, b) => {
+    if (sortMode === "deadline_asc") {
+      if (!a.deadline) return 1;
+      if (!b.deadline) return -1;
+      return a.deadline.localeCompare(b.deadline);
+    }
+    if (sortMode === "submission_asc") return a.submission_date.localeCompare(b.submission_date);
+    return b.submission_date.localeCompare(a.submission_date);
+  });
+
+  const advancedActive = !!dateFrom || !!dateTo || deadlineFilter !== "all" || applicantFilter !== "all";
+  const resetAdvanced = () => {
+    setDateFrom("");
+    setDateTo("");
+    setDeadlineFilter("all");
+    setApplicantFilter("all");
+    setSortMode("submission_desc");
+  };
+
   const count = (s: string) => applications.filter(a => a.status === s).length;
+
   const pendingCount = applications.filter(a => ["submitted", "in_review", "interview"].includes(a.status)).length;
 
   return (
@@ -312,17 +377,74 @@ export default function Applications() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Filter className="w-4 h-4" />Filtres avancés
+            </div>
+            <div>
+              <Label className="text-xs">Soumis du</Label>
+              <Input type="date" className="h-9 w-[160px]" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">au</Label>
+              <Input type="date" className="h-9 w-[160px]" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Deadline</Label>
+              <Select value={deadlineFilter} onValueChange={setDeadlineFilter}>
+                <SelectTrigger className="h-9 w-[190px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les deadlines</SelectItem>
+                  <SelectItem value="soon">⏳ Deadline proche (≤ 14 j)</SelectItem>
+                  <SelectItem value="overdue">⚠️ En retard</SelectItem>
+                  <SelectItem value="later">📅 Plus tard</SelectItem>
+                  <SelectItem value="none">— Sans deadline</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Soumis au nom de</Label>
+              <Select value={applicantFilter} onValueChange={setApplicantFilter}>
+                <SelectTrigger className="h-9 w-[200px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="self">À titre personnel</SelectItem>
+                  {applicantOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Trier par</Label>
+              <Select value={sortMode} onValueChange={setSortMode}>
+                <SelectTrigger className="h-9 w-[200px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="submission_desc">Soumission (récent)</SelectItem>
+                  <SelectItem value="submission_asc">Soumission (ancien)</SelectItem>
+                  <SelectItem value="deadline_asc">Deadline la plus proche</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {advancedActive && (
+              <Button variant="ghost" size="sm" onClick={resetAdvanced}>
+                <RotateCcw className="w-4 h-4 mr-1" />Réinitialiser
+              </Button>
+            )}
+          </div>
           <DataTable
-            data={filtered}
+            data={sortedData}
             columns={[
               {
                 key: "title", header: "Titre", render: (a) => (
                   <div>
                     <p className="font-medium">{a.title}</p>
                     {a.organization && <p className="text-xs text-muted-foreground">{a.organization}</p>}
+                    <p className="text-xs text-muted-foreground">
+                      {a.applicant_type === "self" ? "Personnel" : `${applicantTypeConfig[a.applicant_type]?.short || ""}: ${a.applicant_name || "—"}`}
+                    </p>
                   </div>
                 ),
+                getValue: (a) => `${a.title} ${a.organization || ""} ${a.applicant_name || ""}`,
               },
               { key: "submission_date", header: "Soumission", render: (a) => new Date(a.submission_date).toLocaleDateString("fr-FR"), getValue: (a) => a.submission_date },
               {
@@ -384,6 +506,28 @@ export default function Applications() {
               <Label>Organisme / Institution</Label>
               <Input placeholder="Ex: Université de Nairobi" value={form.organization} onChange={e => setForm({ ...form, organization: e.target.value })} />
             </div>
+            <div>
+              <Label>Je soumets *</Label>
+              <Select value={form.applicant_type} onValueChange={v => setForm({ ...form, applicant_type: v, applicant_name: v === "self" ? "" : form.applicant_name })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(applicantTypeConfig).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {form.applicant_type !== "self" && (
+              <div>
+                <Label>{form.applicant_type === "company" ? "Nom de l'entreprise *" : "Nom de l'organisation *"}</Label>
+                <Input
+                  placeholder={form.applicant_type === "company" ? "Ex: SIGHT Africa SARL" : "Ex: Association Umoja"}
+                  value={form.applicant_name}
+                  onChange={e => setForm({ ...form, applicant_name: e.target.value })}
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Date de soumission *</Label>
@@ -417,7 +561,7 @@ export default function Applications() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button disabled={!form.title || !form.submission_date} onClick={() => upsertMutation.mutate({ ...form, id: editing?.id })}>
+            <Button disabled={!form.title || !form.submission_date || (form.applicant_type !== "self" && !form.applicant_name.trim())} onClick={() => upsertMutation.mutate({ ...form, id: editing?.id })}>
               {editing ? "Mettre à jour" : "Enregistrer"}
             </Button>
           </DialogFooter>
@@ -437,6 +581,8 @@ export default function Applications() {
                 <div><p className="text-muted-foreground">Statut</p><Badge className={statusConfig[detail.status]?.color}>{statusConfig[detail.status]?.label}</Badge></div>
                 <div><p className="text-muted-foreground">Soumis le</p><p className="font-medium">{new Date(detail.submission_date).toLocaleDateString("fr-FR")}</p></div>
                 <div><p className="text-muted-foreground">Deadline</p><p className="font-medium">{detail.deadline ? new Date(detail.deadline).toLocaleDateString("fr-FR") : "—"}</p></div>
+                <div><p className="text-muted-foreground">Soumis au nom de</p><p className="font-medium">{detail.applicant_type === "self" ? "À titre personnel" : `${applicantTypeConfig[detail.applicant_type]?.short} — ${detail.applicant_name || "—"}`}</p></div>
+
               </div>
               {detail.description && <div><p className="text-sm text-muted-foreground">Description</p><p className="text-sm">{detail.description}</p></div>}
               {detail.result_note && <div><p className="text-sm text-muted-foreground">Note de résultat</p><p className="text-sm">{detail.result_note}</p></div>}
