@@ -42,7 +42,10 @@ type Application = {
   status: string;
   result_note: string | null;
   description: string | null;
+  poster_path: string | null;
+  poster_mime: string | null;
   created_at: string;
+
 };
 
 type AppDoc = {
@@ -76,9 +79,12 @@ export default function Applications() {
   const [filter, setFilter] = useState("all");
   const [detail, setDetail] = useState<Application | null>(null);
   const [preview, setPreview] = useState<{ url: string; doc: AppDoc } | null>(null);
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [posterModal, setPosterModal] = useState<{ url: string; title: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
   const [deadlineFilter, setDeadlineFilter] = useState("all");
   const [applicantFilter, setApplicantFilter] = useState("all");
   const [sortMode, setSortMode] = useState("submission_desc");
@@ -132,6 +138,25 @@ export default function Applications() {
     },
     enabled: !!profile,
   });
+
+  // Signed URLs for the posters (affiches) so they can be shown in the list
+  const posterPaths = applications.filter(a => a.poster_path).map(a => a.poster_path as string);
+  const { data: posterUrls = {} } = useQuery({
+    queryKey: ["application_posters", posterPaths.join("|")],
+    queryFn: async () => {
+      if (!posterPaths.length) return {} as Record<string, string>;
+      const { data, error } = await supabase.storage.from("application-docs").createSignedUrls(posterPaths, 3600);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const item of data || []) {
+        if (item.path && item.signedUrl) map[item.path] = item.signedUrl;
+      }
+      return map;
+    },
+    enabled: posterPaths.length > 0,
+  });
+
+
 
   const upsertMutation = useMutation({
     mutationFn: async (values: typeof form & { id?: string }) => {

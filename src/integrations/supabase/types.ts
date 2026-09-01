@@ -211,6 +211,8 @@ export type Database = {
           description: string | null
           id: string
           organization: string | null
+          poster_mime: string | null
+          poster_path: string | null
           result_note: string | null
           status: string
           submission_date: string
@@ -226,6 +228,8 @@ export type Database = {
           description?: string | null
           id?: string
           organization?: string | null
+          poster_mime?: string | null
+          poster_path?: string | null
           result_note?: string | null
           status?: string
           submission_date?: string
@@ -241,6 +245,8 @@ export type Database = {
           description?: string | null
           id?: string
           organization?: string | null
+          poster_mime?: string | null
+          poster_path?: string | null
           result_note?: string | null
           status?: string
           submission_date?: string
