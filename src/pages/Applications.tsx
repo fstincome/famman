@@ -284,7 +284,7 @@ export default function Applications() {
     setDialogOpen(true);
   };
 
-  const filtered = filter === "all" ? applications : applications.filter(a => a.status === filter);
+  
   const deadlineStatus = (a: Application) => {
     if (!a.deadline) return "none";
     const days = Math.ceil((new Date(a.deadline).getTime() - Date.now()) / 86400000);
