@@ -581,6 +581,8 @@ export default function Applications() {
                 <div><p className="text-muted-foreground">Statut</p><Badge className={statusConfig[detail.status]?.color}>{statusConfig[detail.status]?.label}</Badge></div>
                 <div><p className="text-muted-foreground">Soumis le</p><p className="font-medium">{new Date(detail.submission_date).toLocaleDateString("fr-FR")}</p></div>
                 <div><p className="text-muted-foreground">Deadline</p><p className="font-medium">{detail.deadline ? new Date(detail.deadline).toLocaleDateString("fr-FR") : "—"}</p></div>
+                <div><p className="text-muted-foreground">Soumis au nom de</p><p className="font-medium">{detail.applicant_type === "self" ? "À titre personnel" : `${applicantTypeConfig[detail.applicant_type]?.short} — ${detail.applicant_name || "—"}`}</p></div>
+
               </div>
               {detail.description && <div><p className="text-sm text-muted-foreground">Description</p><p className="text-sm">{detail.description}</p></div>}
               {detail.result_note && <div><p className="text-sm text-muted-foreground">Note de résultat</p><p className="text-sm">{detail.result_note}</p></div>}
