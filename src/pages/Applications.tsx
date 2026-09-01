@@ -561,7 +561,7 @@ export default function Applications() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button disabled={!form.title || !form.submission_date} onClick={() => upsertMutation.mutate({ ...form, id: editing?.id })}>
+            <Button disabled={!form.title || !form.submission_date || (form.applicant_type !== "self" && !form.applicant_name.trim())} onClick={() => upsertMutation.mutate({ ...form, id: editing?.id })}>
               {editing ? "Mettre à jour" : "Enregistrer"}
             </Button>
           </DialogFooter>
