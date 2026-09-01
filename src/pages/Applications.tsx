@@ -266,12 +266,15 @@ export default function Applications() {
     setForm({
       title: app.title,
       organization: app.organization || "",
+      applicant_type: app.applicant_type || "self",
+      applicant_name: app.applicant_name || "",
       submission_date: app.submission_date,
       deadline: app.deadline || "",
       status: app.status,
       result_note: app.result_note || "",
       description: app.description || "",
     });
+
     setDialogOpen(true);
   };
 
