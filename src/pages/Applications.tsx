@@ -285,7 +285,49 @@ export default function Applications() {
   };
 
   const filtered = filter === "all" ? applications : applications.filter(a => a.status === filter);
+  const deadlineStatus = (a: Application) => {
+    if (!a.deadline) return "none";
+    const days = Math.ceil((new Date(a.deadline).getTime() - Date.now()) / 86400000);
+    if (days < 0) return "overdue";
+    if (days <= 14) return "soon";
+    return "later";
+  };
+
+  const applicantOptions = Array.from(
+    new Set(applications.filter(a => a.applicant_type !== "self" && a.applicant_name).map(a => a.applicant_name as string))
+  ).sort();
+
+  const filtered = applications.filter(a => {
+    if (filter !== "all" && a.status !== filter) return false;
+    if (dateFrom && a.submission_date < dateFrom) return false;
+    if (dateTo && a.submission_date > dateTo) return false;
+    if (deadlineFilter !== "all" && deadlineStatus(a) !== deadlineFilter) return false;
+    if (applicantFilter === "self" && a.applicant_type !== "self") return false;
+    if (applicantFilter !== "all" && applicantFilter !== "self" && a.applicant_name !== applicantFilter) return false;
+    return true;
+  });
+
+  const sortedData = [...filtered].sort((a, b) => {
+    if (sortMode === "deadline_asc") {
+      if (!a.deadline) return 1;
+      if (!b.deadline) return -1;
+      return a.deadline.localeCompare(b.deadline);
+    }
+    if (sortMode === "submission_asc") return a.submission_date.localeCompare(b.submission_date);
+    return b.submission_date.localeCompare(a.submission_date);
+  });
+
+  const advancedActive = !!dateFrom || !!dateTo || deadlineFilter !== "all" || applicantFilter !== "all";
+  const resetAdvanced = () => {
+    setDateFrom("");
+    setDateTo("");
+    setDeadlineFilter("all");
+    setApplicantFilter("all");
+    setSortMode("submission_desc");
+  };
+
   const count = (s: string) => applications.filter(a => a.status === s).length;
+
   const pendingCount = applications.filter(a => ["submitted", "in_review", "interview"].includes(a.status)).length;
 
   return (
