@@ -139,6 +139,25 @@ export default function Applications() {
     enabled: !!profile,
   });
 
+  // Signed URLs for the posters (affiches) so they can be shown in the list
+  const posterPaths = applications.filter(a => a.poster_path).map(a => a.poster_path as string);
+  const { data: posterUrls = {} } = useQuery({
+    queryKey: ["application_posters", posterPaths.join("|")],
+    queryFn: async () => {
+      if (!posterPaths.length) return {} as Record<string, string>;
+      const { data, error } = await supabase.storage.from("application-docs").createSignedUrls(posterPaths, 3600);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const item of data || []) {
+        if (item.path && item.signedUrl) map[item.path] = item.signedUrl;
+      }
+      return map;
+    },
+    enabled: posterPaths.length > 0,
+  });
+
+
+
   const upsertMutation = useMutation({
     mutationFn: async (values: typeof form & { id?: string }) => {
       const payload: any = {
