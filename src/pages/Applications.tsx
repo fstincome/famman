@@ -42,7 +42,10 @@ type Application = {
   status: string;
   result_note: string | null;
   description: string | null;
+  poster_path: string | null;
+  poster_mime: string | null;
   created_at: string;
+
 };
 
 type AppDoc = {
