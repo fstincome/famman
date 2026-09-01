@@ -132,8 +132,11 @@ export default function Applications() {
       const payload: any = {
         title: values.title,
         organization: values.organization || null,
+        applicant_type: values.applicant_type,
+        applicant_name: values.applicant_type === "self" ? null : values.applicant_name || null,
         submission_date: values.submission_date,
         deadline: values.deadline || null,
+
         status: values.status,
         result_note: values.result_note || null,
         description: values.description || null,
