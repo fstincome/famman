@@ -77,6 +77,12 @@ export default function Applications() {
   const [detail, setDetail] = useState<Application | null>(null);
   const [preview, setPreview] = useState<{ url: string; doc: AppDoc } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [deadlineFilter, setDeadlineFilter] = useState("all");
+  const [applicantFilter, setApplicantFilter] = useState("all");
+  const [sortMode, setSortMode] = useState("submission_desc");
+
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
