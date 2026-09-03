@@ -173,6 +173,20 @@ export default function Applications() {
         description: values.description || null,
         company_id: profile?.company_id,
       };
+
+      // Upload the poster (affiche) if a new file was picked
+      if (posterFile && profile?.company_id) {
+        const safeName = posterFile.name.replace(/[^\w.\-]/g, "_");
+        const path = `${profile.company_id}/posters/${Date.now()}-${safeName}`;
+        const { error: upErr } = await supabase.storage.from("application-docs").upload(path, posterFile);
+        if (upErr) throw upErr;
+        if (editing?.poster_path) {
+          await supabase.storage.from("application-docs").remove([editing.poster_path]);
+        }
+        payload.poster_path = path;
+        payload.poster_mime = posterFile.type || null;
+      }
+
       if (values.id) {
         const { error } = await supabase.from("applications" as any).update(payload).eq("id", values.id as any);
         if (error) throw error;
