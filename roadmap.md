@@ -1,0 +1,3 @@
+- [ ] Finaliser les affiches des candidatures : upload dans le formulaire, miniature dans la liste, détail et modal de visualisation, suppression du fichier associé.
+- [ ] Ajouter un tableau de bord de trésorerie actualisé automatiquement dans l'accueil : revenus, dépenses, dettes, budgets restants et objectifs d'épargne.
+- [ ] Vérifier la compilation et les interactions principales.
