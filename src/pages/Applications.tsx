@@ -207,10 +207,11 @@ export default function Applications() {
         }
       );
       toast({ title: editing ? "Candidature mise à jour" : "Candidature enregistrée" });
-      setDialogOpen(false);
-      setEditing(null);
-      setForm(defaultForm);
-    },
+       setDialogOpen(false);
+       setEditing(null);
+       setPosterFile(null);
+       setForm(defaultForm);
+     },
     onError: (e: any) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
   });
 
@@ -234,7 +235,9 @@ export default function Applications() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data: files } = await supabase.from("application_documents" as any).select("file_path").eq("application_id", id as any);
+      const item = applications.find(a => a.id === id);
       const paths = ((files || []) as any[]).map(f => f.file_path);
+      if (item?.poster_path) paths.push(item.poster_path);
       if (paths.length) await supabase.storage.from("application-docs").remove(paths);
       const { error } = await supabase.from("applications" as any).delete().eq("id", id as any);
       if (error) throw error;
@@ -308,6 +311,7 @@ export default function Applications() {
 
   const openEdit = (app: Application) => {
     setEditing(app);
+    setPosterFile(null);
     setForm({
       title: app.title,
       organization: app.organization || "",
@@ -325,8 +329,24 @@ export default function Applications() {
 
   const openNew = () => {
     setEditing(null);
+    setPosterFile(null);
     setForm(defaultForm);
     setDialogOpen(true);
+  };
+
+  const openPoster = async (app: Application) => {
+    if (!app.poster_path) return;
+    const existingUrl = posterUrls[app.poster_path];
+    if (existingUrl) {
+      setPosterModal({ url: existingUrl, title: app.title });
+      return;
+    }
+    const { data, error } = await supabase.storage.from("application-docs").createSignedUrl(app.poster_path, 600);
+    if (error || !data) {
+      toast({ title: "Impossible d'ouvrir l'affiche", variant: "destructive" });
+      return;
+    }
+    setPosterModal({ url: data.signedUrl, title: app.title });
   };
 
   
