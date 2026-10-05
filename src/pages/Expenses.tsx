@@ -53,8 +53,7 @@ export default function Expenses() {
       return;
     }
     if (requestedAmount > availableForSubcategory) {
-      toast.error(`Fonds insuffisants. Disponible: ${availableForSubcategory.toLocaleString("fr-FR")} BIF`);
-      return;
+      toast.warning(`Dépassement de ${(requestedAmount - availableForSubcategory).toLocaleString("fr-FR")} BIF — sera compensé par les prochains revenus ou un transfert`);
     }
 
     setIsSubmitting(true);
@@ -323,7 +322,7 @@ export default function Expenses() {
                 </p>
                 {isOverBudget && (
                   <p className="text-xs text-destructive flex items-center gap-1 mt-1">
-                    <AlertTriangle className="w-3 h-3" /> Montant supérieur au solde disponible
+                    <AlertTriangle className="w-3 h-3" /> Dépassement autorisé : le solde deviendra négatif et sera compensé par les prochains revenus ou un transfert
                   </p>
                 )}
               </div>
@@ -339,7 +338,6 @@ export default function Expenses() {
                 onChange={e => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                 required
                 min="1"
-                max={availableForSubcategory || undefined}
               />
             </div>
 
@@ -363,7 +361,7 @@ export default function Expenses() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={isSubmitting || !!isOverBudget}>
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Enregistrement..." : "Enregistrer la dépense"}
               </Button>
             </div>
