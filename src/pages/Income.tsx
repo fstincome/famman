@@ -295,6 +295,15 @@ export default function Income() {
                 </div>
               )}
             </div>
+            <label className="flex items-start gap-2 p-3 rounded-lg border cursor-pointer">
+              <Checkbox checked={coverDeficits} onCheckedChange={(v) => setCoverDeficits(!!v)} className="mt-0.5" />
+              <span className="text-sm">
+                <span className="font-medium">Combler d'abord les catégories en déficit</span>
+                <span className="block text-xs text-muted-foreground">
+                  {totalDeficit > 0 ? `Déficit actuel : ${formatBIF(totalDeficit)}. Le reste sera réparti normalement.` : "Aucune catégorie en déficit actuellement."}
+                </span>
+              </span>
+            </label>
             <div>
               <label className="text-sm font-medium">Source</label>
               <Input
