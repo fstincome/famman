@@ -6,6 +6,7 @@ import { SearchResults } from "./SearchResults";
 import { QuotesTicker } from "./QuotesTicker";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeCustomizer } from "./ThemeCustomizer";
+import { AppFooter } from "./AppFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, LogOut } from "lucide-react";
@@ -109,6 +110,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <main className="flex-1 p-6 bg-background overflow-auto relative z-0">
             {children}
           </main>
+          <AppFooter />
         </div>
       </div>
     </SidebarProvider>
