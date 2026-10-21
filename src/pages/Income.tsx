@@ -330,6 +330,43 @@ export default function Income() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Allocation summary */}
+      <Dialog open={!!summary} onOpenChange={(o) => !o && setSummary(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Récapitulatif de la répartition</DialogTitle>
+            <DialogDescription>
+              {summary && `${formatBIF(summary.amount)} répartis — ${formatBIF(summary.lines.reduce((s, l) => s + l.deficitCovered, 0))} utilisés pour combler des déficits`}
+            </DialogDescription>
+          </DialogHeader>
+          {summary && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sous-catégorie</TableHead>
+                  <TableHead className="text-right">Avant</TableHead>
+                  <TableHead className="text-right">Déficit comblé</TableHead>
+                  <TableHead className="text-right">Répartition</TableHead>
+                  <TableHead className="text-right">Nouveau solde</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {summary.lines.map(l => (
+                  <TableRow key={l.subcategory}>
+                    <TableCell className="font-medium">{l.subcategory}</TableCell>
+                    <TableCell className={`text-right ${l.before < 0 ? "text-destructive" : ""}`}>{formatBIF(l.before)}</TableCell>
+                    <TableCell className="text-right">{l.deficitCovered ? formatBIF(l.deficitCovered) : "—"}</TableCell>
+                    <TableCell className="text-right">{formatBIF(l.regular)}</TableCell>
+                    <TableCell className={`text-right font-semibold ${l.after < 0 ? "text-destructive" : ""}`}>{formatBIF(l.after)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          <div className="flex justify-end"><Button onClick={() => setSummary(null)}>Fermer</Button></div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
