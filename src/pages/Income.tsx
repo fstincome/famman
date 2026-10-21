@@ -68,11 +68,11 @@ export default function Income() {
       });
       if (incomeError) throw incomeError;
 
-      // 2. Distribute to budget envelopes
-      for (const sub of ALL_SUBCATEGORIES) {
-        const allocation = Math.round((amount * sub.percentage) / 100);
-        
-        // Use upsert: increment allocated_amount
+      // 2. Distribute to budget envelopes (deficits first if enabled)
+      const lines = computeIncomeAllocation(amount, envelopes, coverDeficits);
+      for (const line of lines) {
+        const allocation = line.deficitCovered + line.regular;
+        const sub = ALL_SUBCATEGORIES.find(s => s.subcategory === line.subcategory)!;
         const existing = envelopes.find(e => e.subcategory === sub.subcategory);
         if (existing) {
           const { error } = await supabase
@@ -98,6 +98,8 @@ export default function Income() {
           if (error) throw error;
         }
       }
+      setSummary({ amount, lines });
+
 
       toast.success(`${amount.toLocaleString()} BIF répartis dans les enveloppes budgétaires`);
       logAndNotify(
