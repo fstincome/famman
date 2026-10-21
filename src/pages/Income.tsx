@@ -15,6 +15,8 @@ import { useIncomeRecords } from "@/hooks/useIncomeRecords";
 import { useBudgetEnvelopes } from "@/hooks/useBudgetEnvelopes";
 import { BUDGET_CATEGORIES, ALL_SUBCATEGORIES } from "@/lib/budgetConfig";
 import { logAndNotify } from "@/hooks/useActivityLogger";
+import { computeIncomeAllocation, AllocationLine } from "@/lib/incomeAllocation";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Income() {
   const { t } = useLanguage();
@@ -23,6 +25,9 @@ export default function Income() {
   const { envelopes, isLoading: envelopesLoading, invalidate: invalidateEnvelopes } = useBudgetEnvelopes();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [coverDeficits, setCoverDeficits] = useState(true);
+  const [summary, setSummary] = useState<{ amount: number; lines: AllocationLine[] } | null>(null);
+  const totalDeficit = envelopes.reduce((s, e) => s + Math.max(0, e.spent_amount - e.allocated_amount), 0);
 
   const [formData, setFormData] = useState({
     amount: "",
