@@ -1,7 +1,7 @@
 {
   "name": "Logiciel Familial",
   "short_name": "Familial",
-  "description": "Gestion Familiale - Finances & Organisation",
+  "description": "SIGHT FAMILY - Finances & Organisation",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -262,7 +262,7 @@ export const translations = {
     },
     // App
     app: {
-      name: "Gestion Familiale",
+      name: "SIGHT FAMILY",
       tagline: "Finances & Organisation",
       connectAccount: "Connecter un compte",
       connectData: "Connecter des données",
@@ -590,7 +590,7 @@ export const translations = {
       permission: "Permission",
     },
     app: {
-      name: "Gestion Familiale",
+      name: "SIGHT FAMILY",
       tagline: "Finances & Organization",
       connectAccount: "Connect Account",
       connectData: "Connect Data",
@@ -764,7 +764,7 @@ export const translations = {
       brother: "Kaka", sister: "Dada", otherMember: "Mwingine", permission: "Ruhusa",
     },
     app: {
-      name: "Gestion Familiale", tagline: "Fedha & Mpangilio", connectAccount: "Unganisha akaunti",
+      name: "SIGHT FAMILY", tagline: "Fedha & Mpangilio", connectAccount: "Unganisha akaunti",
       connectData: "Unganisha data", uploadCSV: "Pakia CSV",
       searchPlaceholder: "Tafuta miamala, akaunti na zaidi...",
     },
@@ -903,7 +903,7 @@ export const translations = {
       brother: "Fratello", sister: "Sorella", otherMember: "Altro membro", permission: "Permesso",
     },
     app: {
-      name: "Gestion Familiale", tagline: "Finanze & Organizzazione",
+      name: "SIGHT FAMILY", tagline: "Finanze & Organizzazione",
       connectAccount: "Collega un account", connectData: "Collega dati",
       uploadCSV: "Importa CSV",
       searchPlaceholder: "Cerca transazioni, conti e altro...",
