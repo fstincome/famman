@@ -15,6 +15,8 @@ import { useIncomeRecords } from "@/hooks/useIncomeRecords";
 import { useBudgetEnvelopes } from "@/hooks/useBudgetEnvelopes";
 import { BUDGET_CATEGORIES, ALL_SUBCATEGORIES } from "@/lib/budgetConfig";
 import { logAndNotify } from "@/hooks/useActivityLogger";
+import { computeIncomeAllocation, AllocationLine } from "@/lib/incomeAllocation";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Income() {
   const { t } = useLanguage();
@@ -23,6 +25,9 @@ export default function Income() {
   const { envelopes, isLoading: envelopesLoading, invalidate: invalidateEnvelopes } = useBudgetEnvelopes();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [coverDeficits, setCoverDeficits] = useState(true);
+  const [summary, setSummary] = useState<{ amount: number; lines: AllocationLine[] } | null>(null);
+  const totalDeficit = envelopes.reduce((s, e) => s + Math.max(0, e.spent_amount - e.allocated_amount), 0);
 
   const [formData, setFormData] = useState({
     amount: "",
@@ -68,11 +73,11 @@ export default function Income() {
       });
       if (incomeError) throw incomeError;
 
-      // 2. Distribute to budget envelopes
-      for (const sub of ALL_SUBCATEGORIES) {
-        const allocation = Math.round((amount * sub.percentage) / 100);
-        
-        // Use upsert: increment allocated_amount
+      // 2. Distribute to budget envelopes (deficits first if enabled)
+      const lines = computeIncomeAllocation(amount, envelopes, coverDeficits);
+      for (const line of lines) {
+        const allocation = line.deficitCovered + line.regular;
+        const sub = ALL_SUBCATEGORIES.find(s => s.subcategory === line.subcategory)!;
         const existing = envelopes.find(e => e.subcategory === sub.subcategory);
         if (existing) {
           const { error } = await supabase
@@ -98,6 +103,8 @@ export default function Income() {
           if (error) throw error;
         }
       }
+      setSummary({ amount, lines });
+
 
       toast.success(`${amount.toLocaleString()} BIF répartis dans les enveloppes budgétaires`);
       logAndNotify(
@@ -288,6 +295,15 @@ export default function Income() {
                 </div>
               )}
             </div>
+            <label className="flex items-start gap-2 p-3 rounded-lg border cursor-pointer">
+              <Checkbox checked={coverDeficits} onCheckedChange={(v) => setCoverDeficits(!!v)} className="mt-0.5" />
+              <span className="text-sm">
+                <span className="font-medium">Combler d'abord les catégories en déficit</span>
+                <span className="block text-xs text-muted-foreground">
+                  {totalDeficit > 0 ? `Déficit actuel : ${formatBIF(totalDeficit)}. Le reste sera réparti normalement.` : "Aucune catégorie en déficit actuellement."}
+                </span>
+              </span>
+            </label>
             <div>
               <label className="text-sm font-medium">Source</label>
               <Input
@@ -321,6 +337,43 @@ export default function Income() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Allocation summary */}
+      <Dialog open={!!summary} onOpenChange={(o) => !o && setSummary(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Récapitulatif de la répartition</DialogTitle>
+            <DialogDescription>
+              {summary && `${formatBIF(summary.amount)} répartis — ${formatBIF(summary.lines.reduce((s, l) => s + l.deficitCovered, 0))} utilisés pour combler des déficits`}
+            </DialogDescription>
+          </DialogHeader>
+          {summary && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sous-catégorie</TableHead>
+                  <TableHead className="text-right">Avant</TableHead>
+                  <TableHead className="text-right">Déficit comblé</TableHead>
+                  <TableHead className="text-right">Répartition</TableHead>
+                  <TableHead className="text-right">Nouveau solde</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {summary.lines.map(l => (
+                  <TableRow key={l.subcategory}>
+                    <TableCell className="font-medium">{l.subcategory}</TableCell>
+                    <TableCell className={`text-right ${l.before < 0 ? "text-destructive" : ""}`}>{formatBIF(l.before)}</TableCell>
+                    <TableCell className="text-right">{l.deficitCovered ? formatBIF(l.deficitCovered) : "—"}</TableCell>
+                    <TableCell className="text-right">{formatBIF(l.regular)}</TableCell>
+                    <TableCell className={`text-right font-semibold ${l.after < 0 ? "text-destructive" : ""}`}>{formatBIF(l.after)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          <div className="flex justify-end"><Button onClick={() => setSummary(null)}>Fermer</Button></div>
         </DialogContent>
       </Dialog>
     </div>
