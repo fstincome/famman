@@ -268,6 +268,9 @@ export const translations = {
       connectData: "Connecter des données",
       uploadCSV: "Importer un CSV",
       searchPlaceholder: "Rechercher des transactions, comptes et plus...",
+      rights: "Tous droits réservés",
+      madeWith: "Fait avec",
+      by: "par",
     },
     health: {
       title: "Santé",
@@ -596,6 +599,9 @@ export const translations = {
       connectData: "Connect Data",
       uploadCSV: "Upload CSV",
       searchPlaceholder: "Search transactions, accounts and more...",
+      rights: "All rights reserved",
+      madeWith: "Made with",
+      by: "by",
     },
     health: {
       title: "Health",
@@ -767,6 +773,9 @@ export const translations = {
       name: "SIGHT FAMILY", tagline: "Fedha & Mpangilio", connectAccount: "Unganisha akaunti",
       connectData: "Unganisha data", uploadCSV: "Pakia CSV",
       searchPlaceholder: "Tafuta miamala, akaunti na zaidi...",
+      rights: "Haki zote zimehifadhiwa",
+      madeWith: "Imetengenezwa kwa",
+      by: "na",
     },
     health: {
       title: "Afya", subtitle: "Fuatilia magonjwa na dawa", addRecord: "Ongeza rekodi",
@@ -907,6 +916,9 @@ export const translations = {
       connectAccount: "Collega un account", connectData: "Collega dati",
       uploadCSV: "Importa CSV",
       searchPlaceholder: "Cerca transazioni, conti e altro...",
+      rights: "Tutti i diritti riservati",
+      madeWith: "Fatto con",
+      by: "da",
     },
     health: {
       title: "Salute", subtitle: "Monitora malattie e farmaci", addRecord: "Aggiungi record",

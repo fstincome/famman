@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import logoImg from "@/assets/logo.png";
+import { AppFooter } from "./AppFooter";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -80,7 +81,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   if (!user) {
     return (
       <div className="flex min-h-screen bg-background">
-        <div className="flex-1 flex items-center justify-center p-8">
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex items-center justify-center p-8">
           <Card className="w-full max-w-md p-8">
             <div className="text-center mb-8">
               <img src={logoImg} alt="Logiciel Familial" className="w-14 h-14 rounded-xl object-contain mx-auto mb-4" />
@@ -134,6 +136,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
               </Button>
             </form>
           </Card>
+          </div>
+          <AppFooter />
         </div>
 
         <div className="hidden lg:flex flex-1 bg-gradient-primary p-8 items-center justify-center text-primary-foreground">
