@@ -1,3 +1,5 @@
 - [ ] Finaliser les affiches des candidatures : upload dans le formulaire, miniature dans la liste, détail et modal de visualisation, suppression du fichier associé.
 - [ ] Ajouter un tableau de bord de trésorerie actualisé automatiquement dans l'accueil : revenus, dépenses, dettes, budgets restants et objectifs d'épargne.
 - [ ] Vérifier la compilation et les interactions principales.
+- [x] Corriger le format des mails de notification et vérifier leur encodage (2 tests de décodage réussis, fonction déployée).
+- [ ] Confirmer la réception d'un mail réel : attend une connexion dans l'aperçu, la session de test n'a pas pu être ouverte.

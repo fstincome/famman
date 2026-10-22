@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@7.0.13";
+import { createNotificationMessage } from "./mail-message.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,7 +8,7 @@ const corsHeaders = {
 };
 
 const BRAND = {
-  name: "Gestion Familiale",
+  name: "SIGHT FAMILY",
   primary: "#0ea5e9",
   accent: "#10b981",
   dark: "#0f172a",
@@ -126,11 +127,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const gmailUser = Deno.env.get("GMAIL_USER")!;
-    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD")!.replace(/\s+/g, "");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const gmailUser = Deno.env.get("GMAIL_USER");
+    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD")?.replace(/\s+/g, "");
+    if (!supabaseUrl || !serviceRoleKey || !anonKey || !gmailUser || !gmailPass) {
+      throw new Error("Email configuration unavailable");
+    }
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
@@ -162,7 +166,7 @@ Deno.serve(async (req) => {
     const PRIMARY_ADMIN_EMAIL = "advaxe.mucatcha@gmail.com";
     const allAdmins = (admins || []).filter((a) => a.email);
     const primary = allAdmins.filter(
-      (a) => a.email!.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL,
+      (a) => a.email?.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL,
     );
     const adminList = primary.length > 0 ? primary : [];
     if (adminList.length === 0) {
@@ -177,19 +181,18 @@ Deno.serve(async (req) => {
     const userEmail = callerProfile.email ?? "";
     const subject = `[${BRAND.name}] ${labelFor(action)} — ${entity_type}${entity_name ? " : " + entity_name : ""}`;
 
-    // Log explicite du compte SMTP utilise (utile pour debug expediteur)
-    console.log("notify-admins: SMTP user =", gmailUser);
-
-    const client = new SMTPClient({
-      connection: {
-        hostname: "smtp.gmail.com",
-        port: 465,
-        tls: true,
-        auth: { username: gmailUser, password: gmailPass },
-      },
+    const client = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: gmailUser, pass: gmailPass },
+      connectionTimeout: 15000,
+      socketTimeout: 20000,
     });
 
+    try {
     for (const admin of adminList) {
+      if (!admin.email) continue;
       const recipientName = `${admin.first_name ?? ""} ${admin.last_name ?? ""}`.trim() || undefined;
       const opts: MailOpts = {
         action,
@@ -201,18 +204,20 @@ Deno.serve(async (req) => {
         details,
         recipientName,
       };
-      await client.send({
-        from: `${BRAND.name} <${gmailUser}>`,
-        to: admin.email!,
+      await client.sendMail(createNotificationMessage({
+        senderEmail: gmailUser,
+        recipientEmail: admin.email,
         subject,
-        content: buildText(opts),
+        text: buildText(opts),
         html: buildHtml(opts),
-      });
+      }));
     }
-    await client.close();
+    } finally {
+      client.close();
+    }
 
     return new Response(
-      JSON.stringify({ success: true, sent: adminList.length, from: gmailUser }),
+      JSON.stringify({ success: true, sent: adminList.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
