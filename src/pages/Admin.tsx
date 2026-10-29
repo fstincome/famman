@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PermissionsManager } from "@/components/PermissionsManager";
+import { NotificationDeliveryLog } from "@/components/NotificationDeliveryLog";
+import { Mail } from "lucide-react";
 
 const FAMILY_ROLES = [
   "father", "mother", "son", "daughter", "brother", "sister",
@@ -212,6 +214,7 @@ export default function Admin() {
         <TabsList>
           <TabsTrigger value="members"><Users className="w-4 h-4 mr-2" />{t.admin.familyMembers}</TabsTrigger>
           {isAdmin && <TabsTrigger value="permissions"><ShieldCheck className="w-4 h-4 mr-2" />Permissions</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="deliveries"><Mail className="w-4 h-4 mr-2" />Envois</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="members" className="space-y-4 mt-4">
@@ -304,6 +307,11 @@ export default function Admin() {
         {isAdmin && (
           <TabsContent value="permissions" className="mt-4">
             <PermissionsManager />
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="deliveries" className="mt-4">
+            <NotificationDeliveryLog />
           </TabsContent>
         )}
       </Tabs>
