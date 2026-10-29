@@ -190,34 +190,59 @@ Deno.serve(async (req) => {
       socketTimeout: 20000,
     });
 
+    const batchId = crypto.randomUUID();
+    const deliveries: Record<string, unknown>[] = [];
     try {
-    for (const admin of adminList) {
-      if (!admin.email) continue;
-      const recipientName = `${admin.first_name ?? ""} ${admin.last_name ?? ""}`.trim() || undefined;
-      const opts: MailOpts = {
-        action,
-        userName,
-        userEmail,
-        entityType: entity_type,
-        entityName: entity_name,
-        entityId: entity_id,
-        details,
-        recipientName,
-      };
-      await client.sendMail(createNotificationMessage({
-        senderEmail: gmailUser,
-        recipientEmail: admin.email,
-        subject,
-        text: buildText(opts),
-        html: buildHtml(opts),
-      }));
-    }
+      for (const admin of adminList) {
+        const recipientName = `${admin.first_name ?? ""} ${admin.last_name ?? ""}`.trim() || undefined;
+        const opts: MailOpts = {
+          action,
+          userName,
+          userEmail,
+          entityType: entity_type,
+          entityName: entity_name,
+          entityId: entity_id,
+          details,
+          recipientName,
+        };
+        let status = "sent";
+        let errorMessage: string | null = null;
+        try {
+          await client.sendMail(createNotificationMessage({
+            senderEmail: gmailUser,
+            recipientEmail: admin.email!,
+            subject,
+            text: buildText(opts),
+            html: buildHtml(opts),
+          }));
+        } catch (e) {
+          status = "failed";
+          errorMessage = ((e as Error).message || String(e)).slice(0, 500);
+          console.error("send failed:", errorMessage);
+        }
+        deliveries.push({
+          company_id: callerProfile.company_id,
+          batch_id: batchId,
+          subject,
+          action,
+          entity_type,
+          entity_name: entity_name ?? null,
+          recipient_email: admin.email,
+          recipient_name: recipientName ?? null,
+          status,
+          error_message: errorMessage,
+          triggered_by: userName,
+        });
+      }
     } finally {
       client.close();
     }
+    const { error: logErr } = await supabaseAdmin.from("notification_deliveries").insert(deliveries);
+    if (logErr) console.error("delivery log insert failed:", logErr.message);
+    const failed = deliveries.filter((d) => d.status === "failed").length;
 
     return new Response(
-      JSON.stringify({ success: true, sent: adminList.length }),
+      JSON.stringify({ success: failed === 0, sent: deliveries.length - failed, failed }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
