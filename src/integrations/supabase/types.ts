@@ -2272,6 +2272,62 @@ export type Database = {
           },
         ]
       }
+      notification_deliveries: {
+        Row: {
+          action: string | null
+          batch_id: string
+          company_id: string
+          created_at: string
+          entity_name: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          status: string
+          subject: string
+          triggered_by: string | null
+        }
+        Insert: {
+          action?: string | null
+          batch_id: string
+          company_id: string
+          created_at?: string
+          entity_name?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          status?: string
+          subject: string
+          triggered_by?: string | null
+        }
+        Update: {
+          action?: string | null
+          batch_id?: string
+          company_id?: string
+          created_at?: string
+          entity_name?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          status?: string
+          subject?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           company_id: string
