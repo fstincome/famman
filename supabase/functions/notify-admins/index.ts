@@ -156,19 +156,19 @@ Deno.serve(async (req) => {
     if (!action || !entity_type) throw new Error("action and entity_type required");
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-    const { data: admins } = await supabaseAdmin
+    const { data: members } = await supabaseAdmin
       .from("profiles")
       .select("email, first_name, last_name")
-      .eq("company_id", callerProfile.company_id)
-      .eq("role", "admin");
+      .eq("company_id", callerProfile.company_id);
 
-    // Destinataire principal : un seul administrateur reçoit les notifications.
-    const PRIMARY_ADMIN_EMAIL = "advaxe.mucatcha@gmail.com";
-    const allAdmins = (admins || []).filter((a) => a.email);
-    const primary = allAdmins.filter(
-      (a) => a.email?.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL,
-    );
-    const adminList = primary.length > 0 ? primary : [];
+    // Tous les membres de la famille (avec un email) reçoivent les notifications.
+    const seen = new Set<string>();
+    const adminList = (members || []).filter((m) => {
+      const e = m.email?.trim().toLowerCase();
+      if (!e || seen.has(e)) return false;
+      seen.add(e);
+      return true;
+    });
     if (adminList.length === 0) {
       return new Response(JSON.stringify({ success: true, skipped: "no admins" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
