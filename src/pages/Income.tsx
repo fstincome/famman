@@ -263,7 +263,7 @@ export default function Income() {
 
       {/* Add Income Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nouveau revenu</DialogTitle>
             <DialogDescription>

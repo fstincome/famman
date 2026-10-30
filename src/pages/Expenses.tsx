@@ -270,7 +270,7 @@ export default function Expenses() {
 
       {/* Add Expense Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nouvelle dépense</DialogTitle>
             <DialogDescription>
