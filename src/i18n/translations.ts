@@ -19,6 +19,12 @@ export const translations = {
       receivables: "Créances & Dettes",
       admin: "Administration",
       settings: "Paramètres",
+      groupHome: "Accueil",
+      groupFinances: "Finances",
+      groupAnalysis: "Analyse",
+      groupFamily: "Vie familiale",
+      groupOpportunities: "Opportunités",
+      groupAdmin: "Administration",
     },
     // Common
     common: {
@@ -363,6 +369,12 @@ export const translations = {
       receivables: "Receivables & Payables",
       admin: "Administration",
       settings: "Settings",
+      groupHome: "Home",
+      groupFinances: "Finances",
+      groupAnalysis: "Analytics",
+      groupFamily: "Family Life",
+      groupOpportunities: "Opportunities",
+      groupAdmin: "Administration",
     },
     common: {
       save: "Save",
@@ -682,6 +694,8 @@ export const translations = {
       reports: "Ripoti", contacts: "Mawasiliano", bankAccounts: "Akaunti za benki",
       needs: "Mahitaji", health: "Afya", calendar: "Kalenda", receivables: "Madeni",
       admin: "Utawala", settings: "Mipangilio",
+      groupHome: "Nyumbani", groupFinances: "Fedha", groupAnalysis: "Uchambuzi",
+      groupFamily: "Maisha ya familia", groupOpportunities: "Fursa", groupAdmin: "Utawala",
     },
     common: {
       save: "Hifadhi", cancel: "Ghairi", delete: "Futa", edit: "Hariri", add: "Ongeza",
@@ -819,6 +833,8 @@ export const translations = {
       bankAccounts: "Conti bancari", needs: "Bisogni identificati", health: "Salute",
       calendar: "Calendario", receivables: "Crediti & Debiti", admin: "Amministrazione",
       settings: "Impostazioni",
+      groupHome: "Home", groupFinances: "Finanze", groupAnalysis: "Analisi",
+      groupFamily: "Vita familiare", groupOpportunities: "Opportunità", groupAdmin: "Amministrazione",
     },
     common: {
       save: "Salva", cancel: "Annulla", delete: "Elimina", edit: "Modifica", add: "Aggiungi",
